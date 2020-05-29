@@ -2,7 +2,7 @@ module Tests exposing (..)
 
 import Test exposing (..)
 import Expect
-import Cards exposing (faceName, Face (..))
+import Cards exposing (suitName, faceName, Face (..), Suit(..))
 
 
 -- Check out https://package.elm-lang.org/packages/elm-explorations/test/latest to learn more about testing in Elm!
@@ -56,4 +56,16 @@ all =
         , test "faceName should turn Two to '2'" <|
             \_ ->
                 faceName Two |> Expect.equal "2"
+        , test "suiteName should turn Spade to 'S'" <|
+            \_->
+                suitName Spade |> Expect.equal "S"
+        , test "suiteName should turn Clubs to 'C'" <|
+            \_->
+                suitName Clubs |> Expect.equal "C"
+        , test "suiteName should turn Heart to 'H'" <|
+            \_->
+                suitName Heart |> Expect.equal "H"
+        , test "suiteName should turn Diamond to 'D'" <|
+            \_->
+                suitName Diamond |> Expect.equal "D"
         ]
