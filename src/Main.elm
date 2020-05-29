@@ -3,17 +3,20 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
+import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName)
 
 
 ---- MODEL ----
 
 type alias Model =
-    {}
+    {
+        card: {suit: Suit, face: Face}
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( {card = {suit = Diamond, face = Seven }}, Cmd.none )
 
 
 
@@ -36,7 +39,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/card-deck/HQ.svg" ] []
+        [ img [ src ("/card-deck/" ++ cardName model.card ++".svg") ] []
         , h1 [] [ text "The Magician" ]
         ]
 

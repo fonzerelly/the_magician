@@ -1,4 +1,4 @@
-module Cards exposing (Suit (..), Face(..), Card, faceName, suitName)
+module Cards exposing (Suit (..), Face(..), Card, faceName, suitName, cardName)
 type Suit = Spade | Diamond | Heart | Clubs
 type Face = Ace  | King  | Queen | Jack | Ten
     | Nine | Eight | Seven | Six  | Five | Four | Three | Two
@@ -30,6 +30,9 @@ suitName suit = case suit of
     Clubs -> "C"
     Heart -> "H"
     Diamond -> "D"
+
+cardName: Card -> String
+cardName card = suitName (.suit card) ++ faceName (.face card)
 
 --cardName : Card->String
 --cardName card = case card.face of
