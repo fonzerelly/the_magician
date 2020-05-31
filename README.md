@@ -2,6 +2,10 @@
 
 ## Prerequisites
 
+- `npm`
+- `npx`
+- `elm`
+
 Install `create-elm-app` locally:
 
 ```sh
@@ -11,7 +15,7 @@ npm install create-elm-app
 ## Test elm-app
 
 ```sh
-./node_modules/.bin/elm-app start
+npx elm-app start
 ```
 
 Visiting [localhost:3000](http://localhost:3000) in a browser should render the app.
@@ -19,7 +23,7 @@ Visiting [localhost:3000](http://localhost:3000) in a browser should render the 
 ## Run tests
 
 ```sh
-./node_modules/.bin/elm-test
+npx elm-test
 ```
 
 should output something similar to:
