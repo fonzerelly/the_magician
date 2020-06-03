@@ -1,8 +1,9 @@
 module Tests exposing (..)
 
 import Test exposing (..)
+import Fuzz exposing (..)
 import Expect
-import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName)
+import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName, createDeck, toFace,faceToInt)
 
 
 -- Check out https://package.elm-lang.org/packages/elm-explorations/test/latest to learn more about testing in Elm!
@@ -75,4 +76,36 @@ all =
                     card = {suit = Diamond, face = Seven}
                 in
                 cardName card |> Expect.equal "D7"
+        
         ]
+
+anotherTestSuite : Test
+anotherTestSuite =
+    describe "2nd test suite"
+        [
+            describe "Card deck functions" 
+                [ 
+                    test "a deck has 52 cards" <|
+                        \_ ->
+                            createDeck 
+                            |> List.length 
+                            |> Expect.equal 52
+                    , fuzz (intRange 1 13) "a deck has 4 of each face" <|
+                        \num ->
+                            case toFace num of
+                                Just face ->
+                                    createDeck 
+                                    |> List.filter (\card -> card.face == face)
+                                    |> List.length
+                                    |> Expect.equal 4
+                                Nothing -> Expect.equal 1 2
+                ]
+            , describe "Card helper functions" 
+                [
+                    fuzz int "toFace converts numbers 1 through 13 to Just Face, otherwise returns Nothing" <|
+                        \number ->
+                            -- if (number > 13) then Ex
+                            Expect.equal 1 1
+                ]                    
+
+        ] 

@@ -1,4 +1,4 @@
-module Cards exposing (Suit (..), Face(..), Card, faceName, suitName, cardName)
+module Cards exposing (Suit (..), Face(..), Card, faceName, suitName, cardName, createDeck, toFace,faceToInt)
 type Suit = Spade | Diamond | Heart | Clubs
 type Face = Ace  | King  | Queen | Jack | Ten
     | Nine | Eight | Seven | Six  | Five | Four | Three | Two
@@ -39,3 +39,52 @@ cardName card = suitName (.suit card) ++ faceName (.face card)
 
 -- createDeck: Card
 -- createDeck = Card
+
+type alias Deck = List Card
+
+fullSuit : Suit -> List Card
+fullSuit suit =
+    [ Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King ]
+    |> List.map (Card suit) 
+
+createDeck : Deck
+createDeck =
+    [ Spade, Diamond, Clubs, Heart ]
+    |> List.map fullSuit 
+    |> List.concat 
+
+-- helper used in test
+toFace : Int -> Maybe Face
+toFace number =
+    case number of
+        1 -> Just Ace
+        2 -> Just Two
+        3 -> Just Three
+        4 -> Just Four
+        5 -> Just Five
+        6 -> Just Six
+        7 -> Just Seven
+        8 -> Just Eight
+        9 -> Just Nine
+        10 -> Just Ten
+        11 -> Just Jack
+        12 -> Just Queen
+        13 -> Just King
+        _ -> Nothing
+
+faceToInt : Face -> Int
+faceToInt face =
+    case face of
+        Ace -> 1
+        Two -> 2
+        Three -> 3
+        Four -> 4
+        Five -> 5
+        Six -> 6
+        Seven -> 7
+        Eight -> 8
+        Nine -> 9
+        Ten -> 10
+        Jack -> 11
+        Queen -> 12
+        King -> 13
