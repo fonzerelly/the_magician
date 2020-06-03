@@ -79,13 +79,19 @@ all =
         
         ]
 
+isTrue : Expect.Expectation
+isTrue = Expect.equal 1 1
+
+isFalse : Expect.Expectation
+isFalse = Expect.equal 1 2
+
 anotherTestSuite : Test
 anotherTestSuite =
     describe "2nd test suite"
         [
             describe "Card deck functions" 
                 [ 
-                    test "a deck has 52 cards" <|
+                    test "createDeck returns a deck with 52 cards" <|
                         \_ ->
                             createDeck 
                             |> List.length 
@@ -98,14 +104,19 @@ anotherTestSuite =
                                     |> List.filter (\card -> card.face == face)
                                     |> List.length
                                     |> Expect.equal 4
-                                Nothing -> Expect.equal 1 2
+                                Nothing -> isFalse
                 ]
             , describe "Card helper functions" 
                 [
                     fuzz int "toFace converts numbers 1 through 13 to Just Face, otherwise returns Nothing" <|
                         \number ->
-                            -- if (number > 13) then Ex
-                            Expect.equal 1 1
+                            if number >= 1 && number <= 13 then 
+                                case toFace number of
+                                    Just _ -> isTrue
+                                    Nothing -> isFalse
+                            else 
+                                case toFace number of
+                                    Just _ -> isFalse
+                                    Nothing -> isTrue
                 ]                    
-
         ] 
