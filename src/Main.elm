@@ -44,7 +44,7 @@ view model =
     div []
         [ toImage model.card
         , h1 [] [ text "The Magician" ]
-        -- , div [] List.map (\card -> img [src ()])
+        , div [] (List.map toImage model.deck)
         ]
 
 
