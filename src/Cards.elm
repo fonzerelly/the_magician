@@ -1,4 +1,4 @@
-module Cards exposing (Suit (..), Face(..), Card, faceName, suitName, cardName, createDeck, toFace,faceToInt)
+module Cards exposing (Suit (..), Face(..), Card, faceName, suitName, cardName, createDeck, toFace,faceToInt, Deck)
 type Suit = Spade | Diamond | Heart | Clubs
 type Face = Ace  | King  | Queen | Jack | Ten
     | Nine | Eight | Seven | Six  | Five | Four | Three | Two
