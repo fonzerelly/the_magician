@@ -3,7 +3,9 @@ module Tests exposing (..)
 import Test exposing (..)
 import Fuzz exposing (..)
 import Expect
-import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName, createDeck, toFace,faceToInt)
+--import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName, createDeck, toFace,faceToInt)
+import Cards exposing (..)
+import CardTrick exposing (faceName, suitName, cardName)
 
 
 -- Check out https://package.elm-lang.org/packages/elm-explorations/test/latest to learn more about testing in Elm!
@@ -11,14 +13,8 @@ import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName, 
 
 all : Test
 all =
-    describe "A Test Suite"
-        [ test "Addition" <|
-            \_ ->
-                Expect.equal 10 (3 + 7)
-        , test "String.left" <|
-            \_ ->
-                Expect.equal "a" (String.left 1 "abcdefg")
-        , test "faceName should turn Ace to 'A'" <|
+    describe "A Test Suite"        
+        [ test "faceName should turn Ace to 'A'" <|
             \_ ->
                 faceName Ace |> Expect.equal "A" 
         , test "faceName should turn King to 'K'" <|
@@ -59,64 +55,64 @@ all =
                 faceName Two |> Expect.equal "2"
         , test "suiteName should turn Spade to 'S'" <|
             \_->
-                suitName Spade |> Expect.equal "S"
+                suitName Spades |> Expect.equal "S"
         , test "suiteName should turn Clubs to 'C'" <|
             \_->
                 suitName Clubs |> Expect.equal "C"
         , test "suiteName should turn Heart to 'H'" <|
             \_->
-                suitName Heart |> Expect.equal "H"
+                suitName Hearts |> Expect.equal "H"
         , test "suiteName should turn Diamond to 'D'" <|
             \_->
-                suitName Diamond |> Expect.equal "D"
+                suitName Diamonds |> Expect.equal "D"
 
         , test "cardName should turn Diamond Seven to 'D7'" <|
             \_->
                 let
-                    card = {suit = Diamond, face = Seven}
+                    card = Card Diamonds Seven
                 in
                 cardName card |> Expect.equal "D7"
         
         ]
 
-isTrue : Expect.Expectation
-isTrue = Expect.equal 1 1
+-- isTrue : Expect.Expectation
+-- isTrue = Expect.equal 1 1
 
-isFalse : Expect.Expectation
-isFalse = Expect.equal 1 2
+-- isFalse : Expect.Expectation
+-- isFalse = Expect.equal 1 2
 
-anotherTestSuite : Test
-anotherTestSuite =
-    describe "2nd test suite"
-        [
-            describe "Card deck functions" 
-                [ 
-                    test "createDeck returns a deck with 52 cards" <|
-                        \_ ->
-                            createDeck 
-                            |> List.length 
-                            |> Expect.equal 52
-                    , fuzz (intRange 1 13) "a deck has 4 of each face" <|
-                        \num ->
-                            case toFace num of
-                                Just face ->
-                                    createDeck 
-                                    |> List.filter (\card -> card.face == face)
-                                    |> List.length
-                                    |> Expect.equal 4
-                                Nothing -> isFalse
-                ]
-            , describe "Card helper functions" 
-                [
-                    fuzz int "toFace converts numbers 1 through 13 to Just Face, otherwise returns Nothing" <|
-                        \number ->
-                            if number >= 1 && number <= 13 then 
-                                case toFace number of
-                                    Just _ -> isTrue
-                                    Nothing -> isFalse
-                            else 
-                                case toFace number of
-                                    Just _ -> isFalse
-                                    Nothing -> isTrue
-                ]                    
-        ] 
+-- anotherTestSuite : Test
+-- anotherTestSuite =
+--     describe "2nd test suite"
+--         [
+--             describe "Card deck functions" 
+--                 [ 
+--                     test "createDeck returns a deck with 52 cards" <|
+--                         \_ ->
+--                             createDeck 
+--                             |> List.length 
+--                             |> Expect.equal 52
+--                     , fuzz (intRange 1 13) "a deck has 4 of each face" <|
+--                         \num ->
+--                             case toFace num of
+--                                 Just face ->
+--                                     createDeck 
+--                                     |> List.filter (\card -> card.face == face)
+--                                     |> List.length
+--                                     |> Expect.equal 4
+--                                 Nothing -> isFalse
+--                 ]
+--             , describe "Card helper functions" 
+--                 [
+--                     fuzz int "toFace converts numbers 1 through 13 to Just Face, otherwise returns Nothing" <|
+--                         \number ->
+--                             if number >= 1 && number <= 13 then 
+--                                 case toFace number of
+--                                     Just _ -> isTrue
+--                                     Nothing -> isFalse
+--                             else 
+--                                 case toFace number of
+--                                     Just _ -> isFalse
+--                                     Nothing -> isTrue
+--                 ]                    
+--         ] 

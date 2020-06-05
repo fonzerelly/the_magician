@@ -3,21 +3,21 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
-import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName, Deck, createDeck)
+import Cards exposing (Face (..), Suit(..), Card(..))
+import CardTrick exposing (suitName, faceName, cardName)
 
 
 ---- MODEL ----
 
 type alias Model =
-    { card: {suit: Suit, face: Face}
-    , deck: Deck
+    { card: Card
+    -- , deck: Deck
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ({ card = {suit = Diamond, face = Seven }
-     , deck = createDeck
+    ({ card = Card Spades Ace
     }, Cmd.none )
 
 
@@ -44,7 +44,7 @@ view model =
     div []
         [ toImage model.card
         , h1 [] [ text "The Magician" ]
-        , div [] (List.map toImage model.deck)
+        -- , div [] (List.map toImage model.deck)
         ]
 
 
