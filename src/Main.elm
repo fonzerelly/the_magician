@@ -5,19 +5,21 @@ import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
 import Cards exposing (Face (..), Suit(..), Card(..))
 import CardTrick exposing (suitName, faceName, cardName)
+import Deck exposing (fullDeck, ShuffledDeck, getCards)
 
 
 ---- MODEL ----
 
 type alias Model =
     { card: Card
-    -- , deck: Deck
+    , deck: ShuffledDeck
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ({ card = Card Spades Ace
+     , deck = fullDeck
     }, Cmd.none )
 
 
@@ -44,7 +46,7 @@ view model =
     div []
         [ toImage model.card
         , h1 [] [ text "The Magician" ]
-        -- , div [] (List.map toImage model.deck)
+        , div [] (Deck.map toImage model.deck)
         ]
 
 
