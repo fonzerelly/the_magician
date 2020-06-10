@@ -3,8 +3,11 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
+
+import Messages exposing (Msg)
+
 import Cards exposing (Face (..), Suit(..), Card(..))
-import CardTrick exposing (suitName, faceName, cardName)
+import CardRepresentation exposing (suitName, faceName, cardName, toImage)
 import Deck exposing (fullDeck, ShuffledDeck, getCards)
 
 
@@ -27,8 +30,8 @@ init =
 ---- UPDATE ----
 
 
-type Msg
-    = NoOp
+-- type Msg
+--     = NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -38,8 +41,6 @@ update msg model =
 
 
 ---- VIEW ----
-toImage: Card -> Html Msg
-toImage card = img [ src ("/card-deck/" ++ cardName card ++".svg") ] []
 
 view : Model -> Html Msg
 view model =
