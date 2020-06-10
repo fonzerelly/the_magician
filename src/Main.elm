@@ -3,28 +3,35 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
-import Cards exposing (suitName, faceName, Face (..), Suit(..), Card, cardName)
+
+import Messages exposing (Msg)
+
+import Cards exposing (Face (..), Suit(..), Card(..))
+import CardRepresentation exposing (suitName, faceName, cardName, toImage)
+import Deck exposing (fullDeck, ShuffledDeck, getCards)
 
 
 ---- MODEL ----
 
 type alias Model =
-    {
-        card: {suit: Suit, face: Face}
+    { card: Card
+    , deck: ShuffledDeck
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {card = {suit = Diamond, face = Seven }}, Cmd.none )
+    ({ card = Card Spades Ace
+     , deck = fullDeck
+    }, Cmd.none )
 
 
 
 ---- UPDATE ----
 
 
-type Msg
-    = NoOp
+-- type Msg
+--     = NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -35,12 +42,12 @@ update msg model =
 
 ---- VIEW ----
 
-
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src ("/card-deck/" ++ cardName model.card ++".svg") ] []
+        [ toImage model.card
         , h1 [] [ text "The Magician" ]
+        , div [] (Deck.map toImage model.deck)
         ]
 
 
