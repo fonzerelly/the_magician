@@ -4,12 +4,16 @@ import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
 
-import Messages exposing (Msg)
+-- import Messages exposing (Msg)
 
 import Cards exposing (Face (..), Suit(..), Card(..))
 import CardRepresentation exposing (suitName, faceName, cardName, toImage)
-import Deck exposing (fullDeck, ShuffledDeck, getCards)
+import Deck exposing (fullDeck, ShuffledDeck)
+-- import Deck exposing (ShuffledDeck(..))
+-- import Deck exposing (randomDeck)
 
+type Msg 
+    = NoOp
 
 ---- MODEL ----
 
@@ -44,10 +48,14 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
+    let 
+        render: Card -> Html Msg
+        render card = img [src <| toImage card] [] 
+    in
     div []
-        [ toImage model.card
+        [ render model.card
         , h1 [] [ text "The Magician" ]
-        , div [] (Deck.map toImage model.deck)
+        , div [] (Deck.map render model.deck)
         ]
 
 
