@@ -4,15 +4,10 @@ import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
 
--- import Messages exposing (Msg)
-
 import Cards exposing (Face (..), Suit(..), Card(..))
 import CardRepresentation exposing (toImage)
 import Deck exposing (fullDeck, ShuffledDeck, randomDeck)
 import Random
-
--- import Deck exposing (ShuffledDeck(..))
--- import Deck exposing (randomDeck)
 
 type Msg 
     = NoOp | ShuffleDeck ShuffledDeck
