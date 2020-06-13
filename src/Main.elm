@@ -7,13 +7,15 @@ import Html.Attributes exposing (src)
 -- import Messages exposing (Msg)
 
 import Cards exposing (Face (..), Suit(..), Card(..))
-import CardRepresentation exposing (suitName, faceName, cardName, toImage)
-import Deck exposing (fullDeck, ShuffledDeck)
+import CardRepresentation exposing (toImage)
+import Deck exposing (fullDeck, ShuffledDeck, randomDeck)
+import Random
+
 -- import Deck exposing (ShuffledDeck(..))
 -- import Deck exposing (randomDeck)
 
 type Msg 
-    = NoOp
+    = NoOp | ShuffleDeck ShuffledDeck
 
 ---- MODEL ----
 
@@ -27,7 +29,7 @@ init : ( Model, Cmd Msg )
 init =
     ({ card = Card Spades Ace
      , deck = fullDeck
-    }, Cmd.none )
+    }, Random.generate ShuffleDeck randomDeck )
 
 
 
@@ -40,7 +42,9 @@ init =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+       ShuffleDeck deck -> ( { model | deck = deck}, Cmd.none)
+       _ -> ( model, Cmd.none )
 
 
 
