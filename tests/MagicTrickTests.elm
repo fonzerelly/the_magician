@@ -5,11 +5,11 @@ import Expect
 
 import Cards exposing (..)
 import Deck exposing (..)
+import CardRepresentation exposing (cardName)
 
-import MagicTrick exposing (handOut, Game, mergeGame, UserSelection(..))
+import MagicTrick exposing (handOut, Game, mergeGame, UserSelection(..), readMind)
 import List
-import Cards exposing (Face(..), Suit(..))
-import Deck exposing (ShuffledDeck(..))
+import Cards exposing (Face(..))
 
 deckSize: ShuffledDeck -> Int
 deckSize = getCards >> List.length
@@ -155,4 +155,38 @@ all =
                     in
                         mergeGame UserTookLeft game |> Expect.equal expectedDeck
             ]
+        , describe "readMind" <|
+            List.map (\(deck, card) -> test ("should pick " ++ (viewCard >> Tuple.second) card) <|
+                \_ -> readMind (newDeck deck) |> Expect.equal card)
+                    [ ( [ Card Hearts Ace
+                        , Card Spades Ace
+                        , Card Clubs Ace
+                        ]
+                        , Card Spades Ace
+                        )
+                    , ( [ Card Spades Ace
+                        , Card Spades King
+                        , Card Spades Queen
+                        , Card Hearts Ace
+                        , Card Hearts King
+                        , Card Hearts Queen
+                        , Card Clubs Ace
+                        , Card Clubs King
+                        , Card Clubs Queen
+                        ]
+                      , Card Hearts King
+                      )
+                    , ( []
+                      , Back
+                      )
+                    , ( [ Card Hearts Ace
+                        , Card Hearts King
+                        , Card Hearts Queen
+                        , Card Spades Ace
+                        , Card Spades King
+                        , Card Spades Queen
+                        ]
+                      , Card Hearts Queen
+                      )
+                    ]
         ]

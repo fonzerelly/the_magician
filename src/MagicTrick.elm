@@ -1,7 +1,9 @@
-module MagicTrick exposing (handOut, Game, mergeGame, UserSelection(..))
+module MagicTrick exposing (handOut, Game, mergeGame, UserSelection(..), readMind)
 import Deck exposing (..)
 import Cards exposing (Card(..))
 import List
+import Cards exposing (Card)
+import CardRepresentation exposing (cardName)
 
 type alias Game = { left:  ShuffledDeck
                   , center: ShuffledDeck
@@ -41,3 +43,17 @@ mergeGame selection game =
             UserTookLeft -> newDeck (listOfCenter game ++ listOfLeft game ++ listOfRight game)
             UserTookRight -> newDeck (listOfLeft game ++ listOfRight game ++ listOfCenter game)
             UserTookCenter -> newDeck (listOfLeft game ++ listOfCenter game ++ listOfRight game)
+
+readMind : ShuffledDeck -> Card
+readMind deck =
+    let
+       div : Int -> Int -> Int
+       div a b = floor (toFloat a / toFloat b)
+
+       listOfCards = getCards deck
+
+       indexToPick = div (List.length listOfCards) 2
+    in
+       case List.drop indexToPick (List.take (indexToPick+1) listOfCards) of
+            [] -> Back
+            pick :: _ -> pick
