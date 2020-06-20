@@ -1,8 +1,9 @@
-module CardRepresentation exposing (faceName, suitName, cardName, toImage, CardSVGPath)
--- module CardRepresentation exposing (faceName, suitName, cardName, cardToImgTag)
+module CardRepresentation exposing (faceName, suitName, cardName, CardsMsg, toHtml)
 import Cards exposing (Suit(..), Face (..), Card(..))
+import Html exposing (Html, img)
+import Html.Attributes exposing (src)
 
-type alias CardSVGPath = String
+type CardsMsg = NoOp
 
 faceName : Face -> String
 faceName face = case face of
@@ -32,5 +33,5 @@ cardName card = case card of
     Card s f -> suitName s ++ faceName f
     _ -> "back"
 
-toImage: Card -> CardSVGPath
-toImage card = "/card-deck/" ++ cardName card ++".svg"
+toHtml: Card -> Html CardsMsg
+toHtml card = img [src ("/card-deck/" ++ cardName card ++ ".svg")] []
