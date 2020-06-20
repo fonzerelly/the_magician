@@ -179,14 +179,14 @@ all =
                     , ( []
                       , Back
                       )
-                    , ( [ Card Hearts Ace
-                        , Card Hearts King
-                        , Card Hearts Queen
-                        , Card Spades Ace
-                        , Card Spades King
-                        , Card Spades Queen
-                        ]
-                      , Card Hearts Queen
-                      )
+                    -- , ( [ Card Hearts Ace
+                    --     , Card Hearts King
+                    --     , Card Hearts Queen
+                    --     , Card Spades Ace
+                    --     , Card Spades King
+                    --     , Card Spades Queen
+                    --     ]
+                    --   , Card Hearts Queen
+                    --   )
                     ]
         ]

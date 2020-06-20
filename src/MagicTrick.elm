@@ -25,10 +25,14 @@ handOut : ShuffledDeck -> Game
 handOut deck =
     let
         indexedCards = List.indexedMap toIndexedCard (getCards deck)
+        everyFirst = 0 |> isNthOf
+        everySecond = 1 |> isNthOf
+        everyThird = 2 |> isNthOf
+
     in
-    { left = newDeck (List.map cardOfTuple (List.filter (isNthOf <| 0) indexedCards))
-    , center = newDeck (List.map cardOfTuple (List.filter (isNthOf <| 1) indexedCards))
-    , right = newDeck (List.map cardOfTuple (List.filter (isNthOf <| 2) indexedCards))
+    { left = indexedCards |> List.filter everyFirst |> List.map cardOfTuple |> newDeck
+    , center = indexedCards |> List.filter everySecond |> List.map cardOfTuple |> newDeck
+    , right = indexedCards |> List.filter everyThird |> List.map cardOfTuple |> newDeck
     }
 
 type UserSelection = UserTookLeft | UserTookCenter | UserTookRight
