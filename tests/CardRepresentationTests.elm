@@ -4,13 +4,11 @@ import Test exposing (..)
 import Fuzz exposing (..)
 import Expect
 
-import Messages exposing (Msg)
-
 import Cards exposing (..)
--- import CardRepresentation exposing (faceName, suitName, cardName)
-import CardRepresentation exposing (faceName, suitName, cardName, toImage)
+import CardRepresentation exposing (..)
 import Html exposing (img)
 import Html.Attributes exposing (src)
+import Cards exposing (Face(..))
 
 all : Test
 all =
@@ -78,12 +76,12 @@ all =
                     in
                     cardName card |> Expect.equal "D7"
             ]
-        , describe "cardToImgTag"
-            [ test "cardToImgTag should turn Ace of Spades to image tag" <|
+        , describe "toHtml"
+            [ test "should turn Ace of Spades into image tag" <|
                 \_->
                     let
                         card = Card Spades Ace
                     in
-                    toImage card |> Expect.equal (img [ src "/card-deck/SA.svg"][])
+                    toHtml card |> Expect.equal (img [src "/card-deck/SA.svg"] [])
             ]
         ]

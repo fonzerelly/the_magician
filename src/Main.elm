@@ -1,15 +1,16 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
-
-import Messages exposing (Msg)
+import Html exposing (Html, text, div, h1)
 
 import Cards exposing (Face (..), Suit(..), Card(..))
-import CardRepresentation exposing (suitName, faceName, cardName, toImage)
-import Deck exposing (fullDeck, ShuffledDeck, getCards)
+import CardRepresentation exposing (cardName, CardsMsg, toHtml)
+import Deck exposing (fullDeck, ShuffledDeck, randomDeck, take, map)
+import Random
+import Debug exposing (log)
 
+type Msg 
+    = NoOp | ShuffleDeck ShuffledDeck | CardsMessages CardsMsg
 
 ---- MODEL ----
 
@@ -23,7 +24,7 @@ init : ( Model, Cmd Msg )
 init =
     ({ card = Card Spades Ace
      , deck = fullDeck
-    }, Cmd.none )
+    }, Random.generate ShuffleDeck randomDeck )
 
 
 
@@ -36,7 +37,14 @@ init =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+       ShuffleDeck newDeck -> 
+            let
+                drawnCards = take 9 newDeck
+                dummy = map (log "Drawn " << cardName) drawnCards
+            in
+            ( { model | deck = drawnCards}, Cmd.none)
+       _ -> ( model, Cmd.none )
 
 
 
@@ -44,11 +52,14 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ toImage model.card
-        , h1 [] [ text "The Magician" ]
-        , div [] (Deck.map toImage model.deck)
-        ]
+    let
+        renderCard = Html.map CardsMessages << toHtml
+    in
+        div []
+            [ renderCard model.card
+            , h1 [] [ text "The Magician" ]
+            , div [] (Deck.map renderCard model.deck)
+            ]
 
 
 
