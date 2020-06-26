@@ -1,11 +1,12 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
-                           , length, downSize, handOut, mergeGame, readMind
+                           , length, downSize, handOut, mergeGame, readMind, createProperSizedDeck
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
 import List exposing (..)
 import CardRepresentation exposing (cardName)
 import Html.Attributes exposing (multiple)
 import Array
+import Result
 
 type alias Game = { left:  SlicedDeck
                   , center: SlicedDeck
@@ -19,8 +20,29 @@ type SlicedDeck = SlicedDeck Deck
 
 type UserSelection = UserTookLeft | UserTookCenter | UserTookRight
 
+createProperSizedDeck: Deck -> Result String ProperSizedDeck 
+createProperSizedDeck deck =
+    let
+        deckSize = List.length deck
 
-downSize: Deck -> Maybe ProperSizedDeck
+        isMultipleOfThree: Int -> Bool
+        isMultipleOfThree size = modBy 3 size |> (==) 0
+        
+        isOdd: Int -> Bool
+        isOdd size = modBy 2 size |> (==) 1
+
+        isValid: Int -> Bool
+        isValid size = isOdd size && isMultipleOfThree size
+    in
+        if isValid deckSize then
+            deck |> ProperSizedDeck |> Result.Ok
+        else 
+            if isOdd deckSize then
+                Result.Err "A deck needs to be dividable by three!"
+            else
+                Result.Err "A deck needs to be odd!"
+
+downSize: Deck -> Deck
 downSize shuffledDeck =
     let
         decksize = List.length shuffledDeck
@@ -36,7 +58,7 @@ downSize shuffledDeck =
             2 -> Nothing
             _ -> shuffledDeck |> take amount |> ProperSizedDeck |> Just
     in
-        shrinkedDeck
+        shuffledDeck |> List.take amount
 
 length: ProperSizedDeck -> Int
 length properSizedDeck = case properSizedDeck of
@@ -76,7 +98,7 @@ handOut deck =
     , right = indexedCards |> List.filter everyThird |> List.map cardOfTuple |> SlicedDeck
     }
 
-mergeGame : UserSelection -> Game -> Maybe ProperSizedDeck
+mergeGame : UserSelection -> Game -> Result String ProperSizedDeck
 mergeGame selection game =
     let
         listOfLeft = .left >> unwrapSlicedDeck
@@ -84,9 +106,9 @@ mergeGame selection game =
         listOfRight = .right >> unwrapSlicedDeck
     in
         case selection of
-            UserTookLeft -> (listOfCenter game ++ listOfLeft game ++ listOfRight game) |> downSize
-            UserTookRight -> (listOfLeft game ++ listOfRight game ++ listOfCenter game) |> downSize
-            UserTookCenter -> (listOfLeft game ++ listOfCenter game ++ listOfRight game) |> downSize
+            UserTookLeft -> (listOfCenter game ++ listOfLeft game ++ listOfRight game) |> createProperSizedDeck
+            UserTookRight -> (listOfLeft game ++ listOfRight game ++ listOfCenter game) |> createProperSizedDeck
+            UserTookCenter -> (listOfLeft game ++ listOfCenter game ++ listOfRight game) |> createProperSizedDeck
 
 readMind : ProperSizedDeck -> Maybe Card
 readMind deck =
