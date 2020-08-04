@@ -1,16 +1,24 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
                            , length, downSize, handOut, mergeGame, mergeGame2, readMind, createProperSizedDeck
+                           , representProperSizedDeck, representGame
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
 import List
--- import CardRepresentation exposing (cardName)
+import CardRepresentation exposing (cardName)
 import Array
 import Result
+
 
 type alias Game = { left:  SlicedDeck
                   , center: SlicedDeck
                   , right: SlicedDeck
                   }
+
+type alias RepresentativeGame = { left: List String
+                                , center: List String
+                                , right: List String
+                                }
+
 
 type alias Deck = List Card
 
@@ -80,6 +88,15 @@ div a b = floor (toFloat a / toFloat b)
 unwrapProperSizedDeck : ProperSizedDeck -> List Card
 unwrapProperSizedDeck deck = case deck of
    ProperSizedDeck d -> d
+
+representProperSizedDeck : ProperSizedDeck -> List String
+representProperSizedDeck deck = deck |> unwrapProperSizedDeck |> List.map cardName
+
+representGame: Game -> RepresentativeGame
+representGame game = { left = game |> .left |> unwrapSlicedDeck |> List.map cardName
+                     , center = game |> .center |> unwrapSlicedDeck |> List.map cardName
+                     , right = game |> .right |> unwrapSlicedDeck |> List.map cardName
+                     }
 
 unwrapSlicedDeck : SlicedDeck -> List Card
 unwrapSlicedDeck deck = case deck of
