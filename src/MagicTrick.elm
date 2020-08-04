@@ -1,10 +1,9 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
-                           , length, downSize, handOut, mergeGame, readMind, createProperSizedDeck
+                           , length, downSize, handOut, mergeGame, mergeGame2, readMind, createProperSizedDeck
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
-import List exposing (..)
-import CardRepresentation exposing (cardName)
-import Html.Attributes exposing (multiple)
+import List
+-- import CardRepresentation exposing (cardName)
 import Array
 import Result
 
@@ -17,6 +16,8 @@ type alias Deck = List Card
 
 type ProperSizedDeck = ProperSizedDeck Deck
 type SlicedDeck = SlicedDeck Deck
+
+
 
 type UserSelection = UserTookLeft | UserTookCenter | UserTookRight
 
@@ -56,7 +57,7 @@ downSize shuffledDeck =
             0 -> Nothing
             1 -> Nothing
             2 -> Nothing
-            _ -> shuffledDeck |> take amount |> ProperSizedDeck |> Just
+            _ -> shuffledDeck |> List.take amount |> ProperSizedDeck |> Just
     in
         shuffledDeck |> List.take amount
 
@@ -98,6 +99,9 @@ handOut deck =
     , right = indexedCards |> List.filter everyThird |> List.map cardOfTuple |> SlicedDeck
     }
 
+-- Das Problem ist, dass merge selber wieder ein Result zurück gibt. 
+-- Dadurch kommt es zu einem Result Result...
+-- Wo müsste also ein Result.andThen zum einsatz kommen?
 mergeGame : UserSelection -> Game -> Result String ProperSizedDeck
 mergeGame selection game =
     let
@@ -109,6 +113,20 @@ mergeGame selection game =
             UserTookLeft -> (listOfCenter game ++ listOfLeft game ++ listOfRight game) |> createProperSizedDeck
             UserTookRight -> (listOfLeft game ++ listOfRight game ++ listOfCenter game) |> createProperSizedDeck
             UserTookCenter -> (listOfLeft game ++ listOfCenter game ++ listOfRight game) |> createProperSizedDeck
+
+
+
+mergeGame2 : UserSelection -> Game -> ProperSizedDeck
+mergeGame2 selection game =
+    let
+        listOfLeft = .left >> unwrapSlicedDeck
+        listOfCenter = .center >> unwrapSlicedDeck
+        listOfRight = .right >> unwrapSlicedDeck
+    in
+        case selection of
+            UserTookLeft -> (listOfCenter game ++ listOfLeft game ++ listOfRight game) |> ProperSizedDeck
+            UserTookRight -> (listOfLeft game ++ listOfRight game ++ listOfCenter game) |> ProperSizedDeck
+            UserTookCenter -> (listOfLeft game ++ listOfCenter game ++ listOfRight game) |> ProperSizedDeck
 
 readMind : ProperSizedDeck -> Maybe Card
 readMind deck =
