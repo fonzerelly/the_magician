@@ -19,13 +19,17 @@ import Html exposing (a)
 
 mergeGame = mergeGame2
 
-regularUsageTests: Test
-regularUsageTests =
-        describe "valid Game"
-            [ fuzz (intRange 0 21) "should find card" <|
+-- test config --
+wantOutput = False
+
+createTest: Int -> Test
+createTest decksize = 
+        describe ("deckSize " ++ (Debug.toString decksize))
+            [ fuzz (intRange 0 decksize) "should find card" <|
                 \randomCardIndex ->
                     let
-                        wantOutput = False
+                        
+
                         log : String -> a -> a
                         log msg a = if wantOutput 
                             then Debug.log msg a
@@ -66,11 +70,12 @@ regularUsageTests =
 
 
                         x00 = log "***********************************" True
-                        deck = fullDeck |> getCards |> List.take 21 
+                        deck = fullDeck |> getCards |> List.take decksize
 
                         memorized = case Array.get randomCardIndex (Array.fromList deck) of
                            Just card -> card
                            Nothing -> Card Spades Ace
+
 
 
                         x03 = log "Initial random number" randomCardIndex
@@ -91,3 +96,23 @@ regularUsageTests =
                     in
                         readCard |> Expect.equal (Just memorized)
             ]
+
+createList maximum = List.range 1 maximum 
+                  |> List.map (\e -> e * 3)
+                  |> List.filter (\e -> modBy 2 e == 1)
+
+sizesOfDeck = createList 100
+
+allTests:Test
+allTests = describe "doof" 
+    (List.map createTest sizesOfDeck)
+    -- [createTest 3, createTest 9]
+-- decksize3 = createTest 3
+-- decksize9 = createTest 9
+-- decksize15 = createTest 15
+-- decksize21 = createTest 21
+-- decksize27 = createTest 27
+-- decksize33 = createTest 33
+-- decksize39 = createTest 39
+-- decksize45 = createTest 45
+-- decksize51 = createTest 51
