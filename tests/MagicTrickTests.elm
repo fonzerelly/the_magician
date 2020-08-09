@@ -7,36 +7,20 @@ import Cards exposing (..)
 import Deck exposing (..)
 import CardRepresentation exposing (cardName)
 
-import MagicTrick exposing (Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..), length, downSize, handOut, mergeGame, readMind)
+import MagicTrick exposing (Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..), length, createProperSizedDeck, downSize, handOut, mergeGame, readMind)
 import List
 import Cards exposing (Face(..))
 import Maybe.FlatMap exposing (flatMap)
 
--- deckSize: ProperSizedDeck -> Int
--- deckSize = getCards >> List.length
-
--- leftSize: Game -> Int
--- leftSize = .left >> deckSize
-
--- centerSize: Game -> Int
--- centerSize = .center >> deckSize
-
--- rightSize: Game -> Int
--- rightSize = .center >> deckSize
-
--- emptyDeck: ProperSizedDeck
--- emptyDeck = ProperSizedDeck newDeck []
 
 all : Test
 all = 
     describe "MagicTrick"
-        [ describe "downSize"
+        [ 
+            describe "downSize"
             [ test "should return Nothing for absurd number of cards" <|
                 \_ ->
-                    let 
-                        absurdSizedDeck = []
-                    in
-                        downSize absurdSizedDeck |> Expect.equal Nothing
+                    downSize [] |> Expect.equal []
             
             , test "should not change the size of a proper sized" <|
                 \_ ->
@@ -47,7 +31,7 @@ all =
                                          ]
                         properSizedDeck = downSize rightSizedDeck
                     in
-                        Maybe.map MagicTrick.length properSizedDeck |> Expect.equal (Just 3)
+                        List.length properSizedDeck |> Expect.equal 3
 
             , test "should change the size of invalid sized deck" <|
                 \_ ->
@@ -59,8 +43,43 @@ all =
                                            ]
                         properSizedDeck = downSize invalidSizedDeck
                     in
-                        Maybe.map MagicTrick.length properSizedDeck |> Expect.equal (Just 9)
+                        List.length properSizedDeck |> Expect.equal 9
                         
+            ]
+         , 
+         describe "createProperSizedDeck"
+            [ test "should verify deck of three" <|
+                \_-> 
+                    let
+                        rightSizedDeck = [ Card Hearts Ace
+                                         , Card Spades Ace
+                                         , Card Clubs Ace
+                                         ]
+                        properSizedDeck = createProperSizedDeck rightSizedDeck
+                    in
+                        Result.map MagicTrick.length properSizedDeck |> Expect.equal (Ok 3)
+            , test "should error on deck of six" <|
+                \_->
+                    let
+                        invalidSizedDeck = [ Card Hearts Ace, Card Hearts King
+                                         , Card Spades Ace, Card Spades King
+                                         , Card Clubs Ace, Card Clubs King
+                                         ]
+                        error = createProperSizedDeck invalidSizedDeck
+                    in
+                        error |> Expect.equal (Result.Err "A deck needs to be odd!")
+
+            , test "should error on deck of seven" <|
+                \_->
+                    let
+                        invalidSizedDeck = [ Card Hearts Ace, Card Hearts King
+                                         , Card Spades Ace, Card Spades King
+                                         , Card Clubs Ace, Card Clubs King
+                                         , Card Diamonds Ace
+                                         ]
+                        error = createProperSizedDeck invalidSizedDeck
+                    in
+                        error |> Expect.equal (Result.Err "A deck needs to be dividable by three!")
             ]
          , describe "handOut"
             [ test "should split shuffledDeck up to three decks" <|
@@ -70,29 +89,29 @@ all =
                             [ Card Hearts Ace
                             , Card Spades Ace
                             , Card Clubs Ace
-                            ] |> downSize
+                            ] |> createProperSizedDeck
                     in
-                        Maybe.map handOut deckOfThree |> Expect.all
-                            [ \result -> Maybe.map .left result |> Expect.equal ([Card Hearts Ace] |> SlicedDeck |> Just)
-                            , \result -> Maybe.map .center result |> Expect.equal ([Card Spades Ace] |> SlicedDeck |> Just)
-                            , \result -> Maybe.map .right result |> Expect.equal ([Card Clubs Ace] |> SlicedDeck |> Just)
+                        Result.map handOut deckOfThree |> Expect.all
+                            [ \result -> Result.map .left result |> Expect.equal ([Card Hearts Ace] |> SlicedDeck |> Ok)
+                            , \result -> Result.map .center result |> Expect.equal ([Card Spades Ace] |> SlicedDeck |> Ok)
+                            , \result -> Result.map .right result |> Expect.equal ([Card Clubs Ace] |> SlicedDeck |> Ok)
                             ]
             , test "should split deck of nine up to three decks with three" <|
                 \_ ->
                     let
-                        deckOfNine = downSize
+                        deckOfNine = createProperSizedDeck
                             [ Card Hearts Ace, Card Hearts King, Card Hearts Queen
                             , Card Spades Ace, Card Spades King, Card Spades Queen
                             , Card Clubs Ace, Card Clubs King, Card Clubs Queen
                             ]
-                        expectedLeft = [Card Hearts Ace, Card Spades Ace, Card Clubs Ace] |> SlicedDeck |> Just
-                        expectedCenter = [Card Hearts King, Card Spades King, Card Clubs King] |> SlicedDeck |> Just
-                        expectedRight = [Card Hearts Queen, Card Spades Queen, Card Clubs Queen] |> SlicedDeck |> Just
+                        expectedLeft = [Card Hearts Ace, Card Spades Ace, Card Clubs Ace] |> SlicedDeck |> Ok
+                        expectedCenter = [Card Hearts King, Card Spades King, Card Clubs King] |> SlicedDeck |> Ok
+                        expectedRight = [Card Hearts Queen, Card Spades Queen, Card Clubs Queen] |> SlicedDeck |> Ok
                     in
-                        Maybe.map handOut deckOfNine |> Expect.all
-                            [ \result -> Maybe.map .left result |> Expect.equal expectedLeft
-                            , \result -> Maybe.map .center result |> Expect.equal expectedCenter
-                            , \result -> Maybe.map .right result |> Expect.equal expectedRight
+                        Result.map handOut deckOfNine |> Expect.all
+                            [ \result -> Result.map .left result |> Expect.equal expectedLeft
+                            , \result -> Result.map .center result |> Expect.equal expectedCenter
+                            , \result -> Result.map .right result |> Expect.equal expectedRight
                             ]
             ]
         , describe "mergeGame"
@@ -106,7 +125,7 @@ all =
                         expectedDeck = [ Card Spades Ace
                                        , Card Hearts Ace
                                        , Card Clubs Ace
-                                       ] |> downSize
+                                       ] |> createProperSizedDeck
                     in
                         mergeGame UserTookLeft game |> Expect.equal expectedDeck
            
@@ -120,7 +139,7 @@ all =
                         expectedDeck = [ Card Hearts Ace
                                        , Card Clubs Ace
                                        , Card Spades Ace
-                                       ] |> downSize
+                                       ] |> createProperSizedDeck
                     in
                         mergeGame UserTookRight game |> Expect.equal expectedDeck
            
@@ -134,7 +153,7 @@ all =
                         expectedDeck = [ Card Hearts Ace
                                        , Card Spades Ace
                                        , Card Clubs Ace
-                                       ] |> downSize
+                                       ] |> createProperSizedDeck
                     in
                         mergeGame UserTookCenter game |> Expect.equal expectedDeck
                                    
@@ -166,13 +185,13 @@ all =
                                        , Card Clubs Ace
                                        , Card Clubs King
                                        , Card Clubs Queen
-                                       ] |> downSize
+                                       ] |> createProperSizedDeck
                     in
                         mergeGame UserTookLeft game |> Expect.equal expectedDeck
             ]
         , describe "readMind" <|
             List.map (\(deck, card) -> test ("should pick " ++ (viewCard >> Tuple.second) card) <|
-                \_ -> flatMap readMind (downSize deck) |> Expect.equal (Just card))
+                \_ -> Maybe.andThen readMind (deck |> createProperSizedDeck |> Result.toMaybe) |> Expect.equal (Just card))
                     [ ( [ Card Hearts Ace
                         , Card Spades Ace
                         , Card Clubs Ace
@@ -191,14 +210,5 @@ all =
                         ]
                       , Card Hearts King
                       )
-                    -- , ( [ Card Hearts Ace
-                    --     , Card Hearts King
-                    --     , Card Hearts Queen
-                    --     , Card Spades Ace
-                    --     , Card Spades King
-                    --     , Card Spades Queen
-                    --     ]
-                    --   , Card Hearts Queen
-                    --   )
                     ]
         ]
