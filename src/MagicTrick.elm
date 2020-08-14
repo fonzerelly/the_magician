@@ -1,5 +1,5 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
-                           , length, downSize, handOut, mergeGame, mergeGame2, readMind, createProperSizedDeck
+                           , length, downSize, handOut, mergeGame, readMind, createProperSizedDeck
                            , representProperSizedDeck, representGame
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
@@ -127,23 +127,9 @@ mergeGame selection game =
         listOfRight = .right >> unwrapSlicedDeck
     in
         case selection of
-            UserTookLeft -> (listOfCenter game ++ listOfLeft game ++ listOfRight game) |> createProperSizedDeck
-            UserTookRight -> (listOfLeft game ++ listOfRight game ++ listOfCenter game) |> createProperSizedDeck
-            UserTookCenter -> (listOfLeft game ++ listOfCenter game ++ listOfRight game) |> createProperSizedDeck
-
-
-
-mergeGame2 : UserSelection -> Game -> ProperSizedDeck
-mergeGame2 selection game =
-    let
-        listOfLeft = .left >> unwrapSlicedDeck
-        listOfCenter = .center >> unwrapSlicedDeck
-        listOfRight = .right >> unwrapSlicedDeck
-    in
-        case selection of
-            UserTookLeft -> (listOfCenter game ++ listOfLeft game ++ listOfRight game) |> ProperSizedDeck
-            UserTookRight -> (listOfLeft game ++ listOfRight game ++ listOfCenter game) |> ProperSizedDeck
-            UserTookCenter -> (listOfLeft game ++ listOfCenter game ++ listOfRight game) |> ProperSizedDeck
+            UserTookLeft -> Result.andThen createProperSizedDeck (Result.Ok (listOfCenter game ++ listOfLeft game ++ listOfRight game))
+            UserTookRight -> Result.andThen createProperSizedDeck (Result.Ok (listOfLeft game ++ listOfRight game ++ listOfCenter game))
+            UserTookCenter -> Result.andThen createProperSizedDeck (Result.Ok (listOfLeft game ++ listOfCenter game ++ listOfRight game))
 
 readMind : ProperSizedDeck -> Maybe Card
 readMind deck =

@@ -2,10 +2,10 @@ module MagicTrickIntegrationTests exposing (..)
 
 import Test exposing (..)
 import Expect 
-import MagicTrick exposing (createProperSizedDeck)
 import Cards exposing (Face(..))
-import MagicTrick exposing (Game, SlicedDeck(..), UserSelection(..), ProperSizedDeck, mergeGame2)
+import MagicTrick exposing (Game, SlicedDeck(..), UserSelection(..), ProperSizedDeck, mergeGame, createProperSizedDeck)
 import Cards exposing (Card (..), Suit(..), Face(..))
+import MagicTrickIntegrationTests exposing (game)
 
 
 all: Test
@@ -15,28 +15,23 @@ all =
             [ test "should return the simple Result a round" <|
                 \_ ->
                     let
-                        game = Result.Ok { left = SlicedDeck [Card Spades Ace]
+                        gameResult = Result.Ok { left = SlicedDeck [Card Spades Ace]
                                          , center = SlicedDeck [Card Hearts Ace]
                                          , right = SlicedDeck [Card Clubs Ace]
                                          }
-                        selection =  Result.Ok UserTookLeft
+                        selection = Result.Ok UserTookLeft
                         expectedMergedDeck = createProperSizedDeck [ Card Hearts Ace
                                                                    , Card Spades Ace
                                                                    , Card Clubs Ace
                                                                    ]
-                        
-                        join : Result x (Result x a) -> Result x a
-                        join mx =
-                            case mx of
-                                Ok x ->
-                                    x
+                        -- result1 = gameResult |> Result.andThen (mergeGame selection)
 
-                                Err err ->
-                                    Err err
+                        map : (a -> value) -> Result x a -> Result x value
+                        andThen : (a -> Result x b) -> Result x a -> Result x b
+                        mergeGame : UserSelection -> Game -> Result String ProperSizedDeck
 
-                        
-                        result1 = Result.map2 mergeGame2 selection game
-                        -- result = join result1
+                        andThen mergeGame game
+                        map 
 
                     in
                     Expect.equal expectedMergedDeck result1
