@@ -5,7 +5,6 @@ import Expect
 import Cards exposing (Face(..))
 import MagicTrick exposing (Game, SlicedDeck(..), UserSelection(..), ProperSizedDeck, mergeGame, createProperSizedDeck)
 import Cards exposing (Card (..), Suit(..), Face(..))
-import MagicTrickIntegrationTests exposing (game)
 
 
 all: Test
@@ -24,16 +23,8 @@ all =
                                                                    , Card Spades Ace
                                                                    , Card Clubs Ace
                                                                    ]
-                        -- result1 = gameResult |> Result.andThen (mergeGame selection)
-
-                        map : (a -> value) -> Result x a -> Result x value
-                        andThen : (a -> Result x b) -> Result x a -> Result x b
-                        mergeGame : UserSelection -> Game -> Result String ProperSizedDeck
-
-                        andThen mergeGame game
-                        map 
-
+                        result = Result.map2 mergeGame selection gameResult |> Result.andThen identity
                     in
-                    Expect.equal expectedMergedDeck result1
+                    Expect.equal expectedMergedDeck result
             ]
         ]
