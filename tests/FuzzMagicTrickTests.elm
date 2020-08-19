@@ -4,7 +4,6 @@ import Expect
 import Fuzz exposing (..)
 import Test exposing (..)
 import Test exposing (Test)
-import MagicTrick exposing (ProperSizedDeck)
 import Deck exposing (ShuffledDeck)
 import Debug exposing (log)
 import Cards exposing (Card(..), Face(..), Suit(..))
@@ -13,11 +12,9 @@ import Cards exposing (..)
 import Deck exposing (fullDeck, getCards)
 import CardRepresentation exposing (cardName)
 import Array
-import MagicTrick exposing (createProperSizedDeck, handOut, SlicedDeck(..), Game, UserSelection(..), mergeGame2, representProperSizedDeck, representGame, readMind)
+import MagicTrick exposing (createProperSizedDeck, handOut, SlicedDeck(..), Game, ProperSizedDeck, UserSelection(..), representProperSizedDeck, representGame, readMind, mergeGame)
 import Expect exposing (true)
 import Html exposing (a)
-
-mergeGame = mergeGame2
 
 -- test config --
 wantOutput = False
@@ -63,7 +60,7 @@ createTest decksize =
                                 choice = Result.map (simulateUser memorizedCard) round
                                 y30 = log ("Choice " ++ roundLabel) choice
 
-                                result = Result.map2 mergeGame choice round
+                                result = Result.map2 mergeGame choice round |> Result.andThen identity
                                 y40 = log ("Resulting Deck after Round " ++ roundLabel) (Result.map representProperSizedDeck result)
                             in
                                 result
@@ -97,22 +94,13 @@ createTest decksize =
                         readCard |> Expect.equal (Just memorized)
             ]
 
-createList maximum = List.range 1 maximum 
+createMultiplesOf3UpTo maximum = List.range 1 maximum 
                   |> List.map (\e -> e * 3)
                   |> List.filter (\e -> modBy 2 e == 1)
 
-sizesOfDeck = createList 100
+sizesOfDeck = createMultiplesOf3UpTo 9
 
 allTests:Test
-allTests = describe "doof" 
+allTests = describe "Gameplay on several deck sizes" 
     (List.map createTest sizesOfDeck)
-    -- [createTest 3, createTest 9]
--- decksize3 = createTest 3
--- decksize9 = createTest 9
--- decksize15 = createTest 15
--- decksize21 = createTest 21
--- decksize27 = createTest 27
--- decksize33 = createTest 33
--- decksize39 = createTest 39
--- decksize45 = createTest 45
--- decksize51 = createTest 51
+    
