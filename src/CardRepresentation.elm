@@ -1,7 +1,8 @@
-module CardRepresentation exposing (faceName, suitName, cardName, CardsMsg, toHtml)
+module CardRepresentation exposing (faceName, suitName, cardName, CardsMsg, toHtml, toPath)
 import Cards exposing (Suit(..), Face (..), Card(..))
 import Html exposing (Html, img)
 import Html.Attributes exposing (src)
+import Element exposing (image)
 
 type CardsMsg = NoOp
 
@@ -33,5 +34,9 @@ cardName card = case card of
     Card s f -> suitName s ++ faceName f
     _ -> "back"
 
+toPath: Card -> String
+toPath card = "/card-deck/" ++ cardName card ++ ".svg"
+
 toHtml: Card -> Html CardsMsg
-toHtml card = img [src ("/card-deck/" ++ cardName card ++ ".svg")] []
+toHtml card = img [src <| toPath card] []
+
