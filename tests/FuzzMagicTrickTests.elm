@@ -4,7 +4,6 @@ import Expect
 import Fuzz exposing (..)
 import Test exposing (..)
 import Test exposing (Test)
-import MagicTrick exposing (ProperSizedDeck)
 import Deck exposing (ShuffledDeck)
 import Debug exposing (log)
 import Cards exposing (Card(..), Face(..), Suit(..))
@@ -13,19 +12,21 @@ import Cards exposing (..)
 import Deck exposing (fullDeck, getCards)
 import CardRepresentation exposing (cardName)
 import Array
-import MagicTrick exposing (createProperSizedDeck, handOut, SlicedDeck(..), Game, UserSelection(..), mergeGame2, representProperSizedDeck, representGame, readMind)
+import MagicTrick exposing (createProperSizedDeck, handOut, SlicedDeck(..), Game, ProperSizedDeck, UserSelection(..), representProperSizedDeck, representGame, readMind, mergeGame)
 import Expect exposing (true)
 import Html exposing (a)
 
-mergeGame = mergeGame2
+-- test config --
+wantOutput = False
 
-regularUsageTests: Test
-regularUsageTests =
-        describe "valid Game"
-            [ fuzz (intRange 0 21) "should find card" <|
+createTest: Int -> Test
+createTest decksize = 
+        describe ("deckSize " ++ (Debug.toString decksize))
+            [ fuzz (intRange 0 decksize) "should find card" <|
                 \randomCardIndex ->
                     let
-                        wantOutput = False
+                        
+
                         log : String -> a -> a
                         log msg a = if wantOutput 
                             then Debug.log msg a
@@ -59,18 +60,19 @@ regularUsageTests =
                                 choice = Result.map (simulateUser memorizedCard) round
                                 y30 = log ("Choice " ++ roundLabel) choice
 
-                                result = Result.map2 mergeGame choice round
+                                result = Result.map2 mergeGame choice round |> Result.andThen identity
                                 y40 = log ("Resulting Deck after Round " ++ roundLabel) (Result.map representProperSizedDeck result)
                             in
                                 result
 
 
                         x00 = log "***********************************" True
-                        deck = fullDeck |> getCards |> List.take 21 
+                        deck = fullDeck |> getCards |> List.take decksize
 
                         memorized = case Array.get randomCardIndex (Array.fromList deck) of
                            Just card -> card
                            Nothing -> Card Spades Ace
+
 
 
                         x03 = log "Initial random number" randomCardIndex
@@ -91,3 +93,14 @@ regularUsageTests =
                     in
                         readCard |> Expect.equal (Just memorized)
             ]
+
+createMultiplesOf3UpTo maximum = List.range 1 maximum 
+                  |> List.map (\e -> e * 3)
+                  |> List.filter (\e -> modBy 2 e == 1)
+
+sizesOfDeck = createMultiplesOf3UpTo 9
+
+allTests:Test
+allTests = describe "Gameplay on several deck sizes" 
+    (List.map createTest sizesOfDeck)
+    
