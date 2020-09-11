@@ -1,6 +1,6 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
                            , length, downSize, handOut, mergeGame, readMind, createProperSizedDeck
-                           , representProperSizedDeck, representGame
+                           , representProperSizedDeck, representGame, unwrapSlicedDeck
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
 import List
@@ -25,8 +25,6 @@ type alias Deck = List Card
 type ProperSizedDeck = ProperSizedDeck Deck
 type SlicedDeck = SlicedDeck Deck
 
-
-
 type UserSelection = UserTookLeft | UserTookCenter | UserTookRight
 
 createProperSizedDeck: Deck -> Result String ProperSizedDeck 
@@ -45,7 +43,7 @@ createProperSizedDeck deck =
     in
         if isValid deckSize then
             deck |> ProperSizedDeck |> Result.Ok
-        else 
+        else
             if isOdd deckSize then
                 Result.Err "A deck needs to be dividable by three!"
             else
@@ -92,6 +90,7 @@ unwrapProperSizedDeck deck = case deck of
 representProperSizedDeck : ProperSizedDeck -> List String
 representProperSizedDeck deck = deck |> unwrapProperSizedDeck |> List.map cardName
 
+-- rename to stringify Game
 representGame: Game -> RepresentativeGame
 representGame game = { left = game |> .left |> unwrapSlicedDeck |> List.map cardName
                      , center = game |> .center |> unwrapSlicedDeck |> List.map cardName
