@@ -1,13 +1,6 @@
-# Projektbeschreibung
+# The Magician
 
-Es ist schon lange her, dass ich das Projekt in der Hand hatte. Ich glaube, zu letzt     
-  wollte ich irgend ein Elm-Framework verwenden, was die Darstellung vereinfacht hätte.    
-  Aber soweit ich mich erinnern kann, ging das dann ab einer bestimmten elm version nicht  
-  mehr. Ich möchte, dass Du als erstes mal ermittelst was von dem Projekt noch             
-  funktioniert und was nicht. Wenn es um das visuelle überprüfen in einem Browser geht,    
-  darfst Du mich gerne als Tester hinzuziehen und mich dinge bestätigen lassen.            
-  Vermutlich wird nicht alles wie gewünscht funktionieren. Fang doch mal bei den Tests an  
-  und prüfe ob die noch laufen. Wenn das geht, dass wäre interessant zu sehen ob die App   
-  noch irgendwie im browser darstellbar ist. Danach gib mir bitte ausführlich bericht      
-  und dann entscheiden wir wie es weiter geht.                                             
-Du darfst lesende Tasks ohne Erlaubniseinholung vollziehen. Bitte melde dich erst wenn Du 
+## TDD oder Testdriven development
+- Zu jeder gewünschten Änderung wird als erstes ein Unittest geschrieben. Dieser sollte aus dem richtigen Grund fehlschlagen. Z.B. Wenn ich eine Methode aufrufe und erwarte den Rückgabewert "X", aber anstatt dass die Methode mir irgendwas liefert wird eine exception geworfen, weil die Methode ja noch nicht existiert. Das wäre z.B. ein "falscher" Grund dass so ein Test scheitert. Du musst den Test so lange korrigieren, bis nur noch das Fehl schlägt was im Assert gewünscht ist. Erst dann wird der Produktionscode von dir angepasst, so dass der Test Grün wird. Wenn der Test Gründ wird kann die nächste kleine Änderung vorgenommen werden.
+## Protokoll
+Schreib zu jeder Methode in eine doc.md-Datei was sie konkret tut, so dass ich leicht nachvollziehen kann was du programmiert hast. 

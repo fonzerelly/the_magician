@@ -8,8 +8,9 @@ mkdir -p dist
 
 ELM_HOME="$(pwd)/elm-home" ./bin/elm make src/Main.elm --optimize --output=dist/elm.js
 
-cp -r src/card-deck dist/card-deck
-cp src/Background.png dist/Background.png
+mkdir -p dist/src
+cp -r src/card-deck dist/src/card-deck
+cp src/Background.png dist/src/Background.png
 
 cat > dist/index.html <<'EOF'
 <!DOCTYPE html>
