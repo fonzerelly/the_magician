@@ -82,7 +82,7 @@ all =
                     let
                         card = Card Spades Ace
                     in
-                    toHtml card |> Expect.equal (img [src "/card-deck/SA.svg"] [])
+                    toHtml card |> Expect.equal (img [src "/src/card-deck/SA.svg"] [])
             ]
         , describe "toPath"
             [ test "should turn Ace of Spades into elm-ui-image of size 500" <|
@@ -90,6 +90,6 @@ all =
                     let
                         card = Card Spades Ace
                     in
-                    toPath card |> Expect.equal "/card-deck/SA.svg"
+                    toPath card |> Expect.equal "/src/card-deck/SA.svg"
             ]
         ]

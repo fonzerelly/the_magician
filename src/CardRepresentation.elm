@@ -35,7 +35,7 @@ cardName card = case card of
     _ -> "back"
 
 toPath: Card -> String
-toPath card = "/card-deck/" ++ cardName card ++ ".svg"
+toPath card = "/src/card-deck/" ++ cardName card ++ ".svg"
 
 toHtml: Card -> Html CardsMsg
 toHtml card = img [src <| toPath card] []
