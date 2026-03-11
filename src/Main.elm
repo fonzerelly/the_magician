@@ -136,10 +136,10 @@ update msg model =
 
                 newPhase = tick model.drawPile model.animPhase
 
-                -- When Sliding starts, fetch real pixel positions of all pile elements
+                -- Positionen früh holen (wenn Shrinking startet), damit sie bei Sliding garantiert da sind
                 cmd =
                     case ( model.animPhase, newPhase ) of
-                        ( Expanding _, Sliding _ ) ->
+                        ( Idle _, Shrinking _ ) ->
                             fetchPilePositions
                         _ ->
                             Cmd.none
@@ -405,7 +405,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 100 Tick
+    Time.every 50 Tick
 
 
 main : Program Flags Model Msg
