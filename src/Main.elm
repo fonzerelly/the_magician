@@ -17,7 +17,7 @@ import Element.Events
 import Time
 import Maybe
 import MagicTrick exposing (ProperSizedDeck, Game, UserSelection(..))
-import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, unwrapProperSizedDeck)
+import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, readMind, unwrapProperSizedDeck)
 import Deck exposing (getCards)
 import MagicTrick exposing (SlicedDeck(..))
 import MagicTrick exposing (unwrapSlicedDeck)
@@ -33,6 +33,7 @@ type alias Flags = ()
 type AppPhase
     = Dealing
     | WaitingForSelection
+    | ShowingResult Card
 
 
 type Msg
@@ -54,6 +55,7 @@ type alias Model =
     , dealtRight : List Card
     , animPhase : AnimPhase
     , appPhase : AppPhase
+    , round : Int                   -- aktuelle Runde (1–3)
     , timeDelta : Int
     , startTime : Time.Posix
     , pilePositions : Maybe PilePositions
@@ -82,6 +84,7 @@ init _ =
       , dealtRight = []
       , animPhase = Idle 0
       , appPhase = Dealing
+      , round = 1
       , timeDelta = 0
       , startTime = Time.millisToPosix 0
       , pilePositions = Nothing
@@ -120,6 +123,7 @@ update msg model =
                 , dealtRight = []
                 , animPhase = Idle 0
                 , appPhase = Dealing
+                , round = 1
               }
             , Cmd.none
             )
@@ -146,10 +150,14 @@ update msg model =
                 newPhase = tick model.drawPile model.animPhase
 
                 newAppPhase =
-                    if DealAnimation.isDealingDone newPhase (List.length model.drawPile) then
-                        WaitingForSelection
-                    else
-                        Dealing
+                    case model.appPhase of
+                        ShowingResult _ ->
+                            model.appPhase
+                        _ ->
+                            if DealAnimation.isDealingDone newPhase (List.length model.drawPile) then
+                                WaitingForSelection
+                            else
+                                Dealing
 
                 -- Problem: Browser.Dom.getElement ist asynchron. Das Ergebnis kommt erst im
                 -- *nächsten* Update-Zyklus an (via GotPilePositions). Wenn man die Positionen
@@ -187,22 +195,38 @@ update msg model =
                             ( model, Cmd.none )
 
                         Ok mergedDeck ->
-                            let
-                                newDrawPile = unwrapProperSizedDeck mergedDeck
-                                newGame     = handOut mergedDeck
-                            in
-                            ( { model
-                                | game         = Ok newGame
-                                , drawPile     = newDrawPile
-                                , dealtLeft    = []
-                                , dealtCenter  = []
-                                , dealtRight   = []
-                                , animPhase    = Idle 0
-                                , appPhase     = Dealing
-                                , pilePositions = Nothing
-                              }
-                            , Cmd.none
-                            )
+                            if model.round < 3 then
+                                -- Noch nicht fertig: neu austeilen für die nächste Runde
+                                let
+                                    newDrawPile = unwrapProperSizedDeck mergedDeck
+                                    newGame     = handOut mergedDeck
+                                in
+                                ( { model
+                                    | game          = Ok newGame
+                                    , drawPile      = newDrawPile
+                                    , dealtLeft     = []
+                                    , dealtCenter   = []
+                                    , dealtRight    = []
+                                    , animPhase     = Idle 0
+                                    , appPhase      = Dealing
+                                    , round         = model.round + 1
+                                    , pilePositions = Nothing
+                                  }
+                                , Cmd.none
+                                )
+                            else
+                                -- Runde 3 abgeschlossen: Karte aufdecken
+                                let
+                                    identifiedCard = readMind mergedDeck
+                                in
+                                case identifiedCard of
+                                    Nothing ->
+                                        ( model, Cmd.none )
+
+                                    Just card ->
+                                        ( { model | appPhase = ShowingResult card }
+                                        , Cmd.none
+                                        )
 
         NoOp ->
             ( model, Cmd.none )
@@ -380,6 +404,9 @@ pileAttrs pile appPhase =
         Dealing ->
             baseAttrs
 
+        ShowingResult _ ->
+            baseAttrs
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -391,6 +418,9 @@ view model =
             case model.appPhase of
                 WaitingForSelection ->
                     "Klicke auf den Stapel, in dem die Karte ist, die du dir gemerkt hast!"
+
+                ShowingResult card ->
+                    "Deine Karte war die " ++ cardName card ++ "!"
 
                 Dealing ->
                     orders
@@ -462,15 +492,28 @@ view model =
                                   { src = "/src/Background.png", description = "The Magician" }
                           ]
 
-                    -- three destination piles; draw pile sits above the center pile
-                    , row [ height fill, width fill, centerX, spacing 10 ]
-                        [ column [ height fill, width fill, centerX ]
-                            [ el (pileAttrs PileLeft model.appPhase) <| renderPile model.dealtLeft ]
-                        , column [ height fill, width fill, centerX ]
-                            [ el ([ above drawPileView ] ++ pileAttrs PileCenter model.appPhase) <| renderPile model.dealtCenter ]
-                        , column [ height fill, width fill, centerX ]
-                            [ el (pileAttrs PileRight model.appPhase) <| renderPile model.dealtRight ]
-                        ]
+                    , case model.appPhase of
+                        ShowingResult card ->
+                            -- Karte mindestens doppelt so groß (2.5x) zentriert auf der rechten Seite
+                            el [ height fill, width fill, centerX ] <|
+                                image
+                                    [ centerX
+                                    , centerY
+                                    , width  (px (cardMaxWidth * 5 // 2))
+                                    , height (px (cardHeight  * 5 // 2))
+                                    ]
+                                    { src = toPath card, description = cardName card }
+
+                        _ ->
+                            -- three destination piles; draw pile sits above the center pile
+                            row [ height fill, width fill, centerX, spacing 10 ]
+                                [ column [ height fill, width fill, centerX ]
+                                    [ el (pileAttrs PileLeft model.appPhase) <| renderPile model.dealtLeft ]
+                                , column [ height fill, width fill, centerX ]
+                                    [ el ([ above drawPileView ] ++ pileAttrs PileCenter model.appPhase) <| renderPile model.dealtCenter ]
+                                , column [ height fill, width fill, centerX ]
+                                    [ el (pileAttrs PileRight model.appPhase) <| renderPile model.dealtRight ]
+                                ]
                     ]
                 ]
         ]
@@ -480,8 +523,10 @@ view model =
 ---- PROGRAM ----
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Time.every 50 Tick
+subscriptions model =
+    case model.appPhase of
+        Dealing -> Time.every 50 Tick
+        _       -> Sub.none
 
 
 main : Program Flags Model Msg
