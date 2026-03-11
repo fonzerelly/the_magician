@@ -2,7 +2,7 @@ module DealAnimationTests exposing (..)
 
 import Test exposing (..)
 import Expect
-import DealAnimation exposing (Pile(..), dealDestination, AnimPhase(..), tick, flipScale, slideOffset, pileId, drawPileId, PilePositions)
+import DealAnimation exposing (Pile(..), dealDestination, AnimPhase(..), tick, flipScale, slideOffset, pileId, drawPileId, PilePositions, isDealingDone)
 import Cards exposing (Card(..), Face(..), Suit(..))
 
 
@@ -119,6 +119,30 @@ all =
                         slideOffset PileRight positions 0.5
                             |> Expect.equal { dx = 75, dy = 100 }
                 ]
+            ]
+
+        , describe "isDealingDone"
+            [ test "Idle mit index == totalCards → True" <|
+                \_ -> isDealingDone (Idle 3) 3 |> Expect.equal True
+
+            , test "Idle mit index < totalCards → False" <|
+                \_ -> isDealingDone (Idle 2) 3 |> Expect.equal False
+
+            , test "Idle mit index 0 und totalCards 3 → False" <|
+                \_ -> isDealingDone (Idle 0) 3 |> Expect.equal False
+
+            , test "leeres Deck: Idle 0 und totalCards 0 → True" <|
+                \_ -> isDealingDone (Idle 0) 0 |> Expect.equal True
+
+            , test "Shrinking → False (Animation läuft noch)" <|
+                \_ ->
+                    let anim = { index = 2, card = Card Spades Ace, dest = PileLeft, progress = 0.5 }
+                    in isDealingDone (Shrinking anim) 3 |> Expect.equal False
+
+            , test "Sliding → False (Animation läuft noch)" <|
+                \_ ->
+                    let anim = { index = 2, card = Card Spades Ace, dest = PileLeft, progress = 0.5 }
+                    in isDealingDone (Sliding anim) 3 |> Expect.equal False
             ]
 
         , describe "tick"

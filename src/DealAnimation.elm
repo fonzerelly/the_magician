@@ -1,4 +1,4 @@
-module DealAnimation exposing (Pile(..), dealDestination, AnimPhase(..), AnimData, tick, flipScale, slideOffset, pileId, drawPileId, PilePositions)
+module DealAnimation exposing (Pile(..), dealDestination, AnimPhase(..), AnimData, tick, flipScale, slideOffset, pileId, drawPileId, PilePositions, isDealingDone)
 
 import Cards exposing (Card(..))
 
@@ -88,6 +88,17 @@ dealDestination index =
         0 -> PileLeft
         1 -> PileCenter
         _ -> PileRight
+
+
+{-| Gibt True zurück, wenn alle Karten ausgeteilt wurden.
+Das ist der Fall, wenn die Animation im Idle-Zustand ist und der Index
+die Gesamtzahl der Karten erreicht oder überschritten hat.
+-}
+isDealingDone : AnimPhase -> Int -> Bool
+isDealingDone phase totalCards =
+    case phase of
+        Idle index -> index >= totalCards
+        _          -> False
 
 
 {-| Advances the animation by one tick step (1/10 of total phase duration).

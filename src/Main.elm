@@ -12,13 +12,13 @@ import Random
 import Element exposing (..)
 import Element.Background
 import Element.Border
+import Element.Events
 
 import Time
 import Maybe
-import MagicTrick exposing (ProperSizedDeck, Game)
-import MagicTrick exposing (createProperSizedDeck)
+import MagicTrick exposing (ProperSizedDeck, Game, UserSelection(..))
+import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, unwrapProperSizedDeck)
 import Deck exposing (getCards)
-import MagicTrick exposing (handOut)
 import MagicTrick exposing (SlicedDeck(..))
 import MagicTrick exposing (unwrapSlicedDeck)
 
@@ -30,12 +30,18 @@ import Task
 type alias Flags = ()
 
 
+type AppPhase
+    = Dealing
+    | WaitingForSelection
+
+
 type Msg
     = NoOp
     | ShuffleDeck ShuffledDeck
     | Tick Time.Posix
     | InitialTime Time.Posix
     | GotPilePositions (Result Browser.Dom.Error PilePositions)
+    | UserPickedPile UserSelection
 
 
 ---- MODEL ----
@@ -47,6 +53,7 @@ type alias Model =
     , dealtCenter : List Card
     , dealtRight : List Card
     , animPhase : AnimPhase
+    , appPhase : AppPhase
     , timeDelta : Int
     , startTime : Time.Posix
     , pilePositions : Maybe PilePositions
@@ -74,6 +81,7 @@ init _ =
       , dealtCenter = []
       , dealtRight = []
       , animPhase = Idle 0
+      , appPhase = Dealing
       , timeDelta = 0
       , startTime = Time.millisToPosix 0
       , pilePositions = Nothing
@@ -111,6 +119,7 @@ update msg model =
                 , dealtCenter = []
                 , dealtRight = []
                 , animPhase = Idle 0
+                , appPhase = Dealing
               }
             , Cmd.none
             )
@@ -136,6 +145,12 @@ update msg model =
 
                 newPhase = tick model.drawPile model.animPhase
 
+                newAppPhase =
+                    if DealAnimation.isDealingDone newPhase (List.length model.drawPile) then
+                        WaitingForSelection
+                    else
+                        Dealing
+
                 -- Problem: Browser.Dom.getElement ist asynchron. Das Ergebnis kommt erst im
                 -- *nächsten* Update-Zyklus an (via GotPilePositions). Wenn man die Positionen
                 -- erst beim Start der Sliding-Phase anfordert, sind sie beim ersten Sliding-Tick
@@ -151,7 +166,7 @@ update msg model =
                         _ ->
                             Cmd.none
             in
-            ( { newModel | animPhase = newPhase, timeDelta = timeDelta }
+            ( { newModel | animPhase = newPhase, appPhase = newAppPhase, timeDelta = timeDelta }
             , cmd
             )
 
@@ -160,6 +175,34 @@ update msg model =
 
         GotPilePositions (Err _) ->
             ( model, Cmd.none )
+
+        UserPickedPile selection ->
+            case model.game of
+                Err _ ->
+                    ( model, Cmd.none )
+
+                Ok game ->
+                    case mergeGame selection game of
+                        Err _ ->
+                            ( model, Cmd.none )
+
+                        Ok mergedDeck ->
+                            let
+                                newDrawPile = unwrapProperSizedDeck mergedDeck
+                                newGame     = handOut mergedDeck
+                            in
+                            ( { model
+                                | game         = Ok newGame
+                                , drawPile     = newDrawPile
+                                , dealtLeft    = []
+                                , dealtCenter  = []
+                                , dealtRight   = []
+                                , animPhase    = Idle 0
+                                , appPhase     = Dealing
+                                , pilePositions = Nothing
+                              }
+                            , Cmd.none
+                            )
 
         NoOp ->
             ( model, Cmd.none )
@@ -310,6 +353,34 @@ drawPileSize phase total =
         Sliding anim   -> total - anim.index - 1
 
 
+{-| Erzeugt die Attribute für einen Zielpfahl.
+Im WaitingForSelection-Zustand wird ein Klick-Handler und ein Cursor-Pointer hinzugefügt.
+-}
+pileAttrs : Pile -> AppPhase -> List (Attribute Msg)
+pileAttrs pile appPhase =
+    let
+        baseAttrs =
+            [ centerX
+            , centerY
+            , htmlAttribute (Html.Attributes.id (pileId pile))
+            ]
+
+        selection =
+            case pile of
+                PileLeft   -> UserTookLeft
+                PileCenter -> UserTookCenter
+                PileRight  -> UserTookRight
+    in
+    case appPhase of
+        WaitingForSelection ->
+            baseAttrs ++
+                [ Element.Events.onClick (UserPickedPile selection)
+                , htmlAttribute (Html.Attributes.style "cursor" "pointer")
+                ]
+        Dealing ->
+            baseAttrs
+
+
 view : Model -> Browser.Document Msg
 view model =
     let
@@ -317,12 +388,17 @@ view model =
         cardCount = List.length model.drawPile
 
         order =
-            orders
-                |> List.reverse
-                |> List.filter (\o -> .timestamp o < model.timeDelta)
-                |> List.head
-                |> Maybe.map .message
-                |> Maybe.withDefault ""
+            case model.appPhase of
+                WaitingForSelection ->
+                    "Klicke auf den Stapel, in dem die Karte ist, die du dir gemerkt hast!"
+
+                Dealing ->
+                    orders
+                        |> List.reverse
+                        |> List.filter (\o -> .timestamp o < model.timeDelta)
+                        |> List.head
+                        |> Maybe.map .message
+                        |> Maybe.withDefault ""
 
         remainingCount = drawPileSize model.animPhase cardCount
 
@@ -389,18 +465,11 @@ view model =
                     -- three destination piles; draw pile sits above the center pile
                     , row [ height fill, width fill, centerX, spacing 10 ]
                         [ column [ height fill, width fill, centerX ]
-                            [ el [ centerX, centerY, htmlAttribute (Html.Attributes.id (pileId PileLeft)) ] <| renderPile model.dealtLeft ]
+                            [ el (pileAttrs PileLeft model.appPhase) <| renderPile model.dealtLeft ]
                         , column [ height fill, width fill, centerX ]
-                            [ el
-                                [ centerX
-                                , centerY
-                                , above drawPileView
-                                , htmlAttribute (Html.Attributes.id (pileId PileCenter))
-                                ]
-                              <| renderPile model.dealtCenter
-                            ]
+                            [ el ([ above drawPileView ] ++ pileAttrs PileCenter model.appPhase) <| renderPile model.dealtCenter ]
                         , column [ height fill, width fill, centerX ]
-                            [ el [ centerX, centerY, htmlAttribute (Html.Attributes.id (pileId PileRight)) ] <| renderPile model.dealtRight ]
+                            [ el (pileAttrs PileRight model.appPhase) <| renderPile model.dealtRight ]
                         ]
                     ]
                 ]

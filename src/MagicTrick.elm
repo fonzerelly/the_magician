@@ -1,6 +1,6 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
                            , length, downSize, handOut, mergeGame, readMind, createProperSizedDeck
-                           , representProperSizedDeck, representGame, unwrapSlicedDeck
+                           , representProperSizedDeck, representGame, unwrapSlicedDeck, unwrapProperSizedDeck
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
 import List
