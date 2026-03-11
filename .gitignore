@@ -1,6 +1,10 @@
 # Distribution
 build/
 
+# Elm pubgrub versions cache — wird bei jedem Testlauf automatisch vom
+# Elm-Paketregistry aktualisiert, hat keinen Bezug zu unseren Dependencies
+elm-home/pubgrub/versions_cache.json
+
 # elm-package generated files
 elm-stuff
 
