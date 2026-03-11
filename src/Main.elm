@@ -136,7 +136,14 @@ update msg model =
 
                 newPhase = tick model.drawPile model.animPhase
 
-                -- Positionen früh holen (wenn Shrinking startet), damit sie bei Sliding garantiert da sind
+                -- Problem: Browser.Dom.getElement ist asynchron. Das Ergebnis kommt erst im
+                -- *nächsten* Update-Zyklus an (via GotPilePositions). Wenn man die Positionen
+                -- erst beim Start der Sliding-Phase anfordert, sind sie beim ersten Sliding-Tick
+                -- noch nicht da → die Karte springt von (0,0) los statt vom richtigen Startpunkt.
+                --
+                -- Lösung: Positionen eine Phase früher anfordern — beim Übergang Idle→Shrinking.
+                -- Die Shrinking- und Expanding-Phasen dauern je mehrere Ticks (100 ms-Intervall),
+                -- sodass GotPilePositions garantiert eintrifft, bevor Sliding beginnt.
                 cmd =
                     case ( model.animPhase, newPhase ) of
                         ( Idle _, Shrinking _ ) ->
