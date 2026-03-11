@@ -136,18 +136,18 @@ update msg model =
                 timeDelta =
                     Time.posixToMillis newTime - Time.posixToMillis model.startTime
 
-                -- When a Sliding phase completes, commit the card to the pile
+                newPhase = tick model.drawPile model.animPhase
+
+                -- Wenn die Sliding-Phase abgeschlossen ist (Übergang Sliding → Idle),
+                -- wird die Karte fest zum Zielpfahl hinzugefügt.
+                -- Wir prüfen den Phasenwechsel statt progress + 0.1, damit diese
+                -- Logik unabhängig von der konkreten Schrittgröße in DealAnimation bleibt.
                 newModel =
-                    case model.animPhase of
-                        Sliding anim ->
-                            if anim.progress + 0.1 >= 1.0 then
-                                addToDealt anim.dest anim.card { model | pilePositions = Nothing }
-                            else
-                                model
+                    case ( model.animPhase, newPhase ) of
+                        ( Sliding anim, Idle _ ) ->
+                            addToDealt anim.dest anim.card { model | pilePositions = Nothing }
                         _ ->
                             model
-
-                newPhase = tick model.drawPile model.animPhase
 
                 newAppPhase =
                     case model.appPhase of
@@ -525,7 +525,7 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.appPhase of
-        Dealing -> Time.every 50 Tick
+        Dealing -> Time.every 30 Tick
         _       -> Sub.none
 
 

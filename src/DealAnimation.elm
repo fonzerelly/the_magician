@@ -110,7 +110,7 @@ isDealingDone phase totalCards =
 tick : List Card -> AnimPhase -> AnimPhase
 tick remainingCards phase =
     let
-        step = 0.1
+        step = 0.2
     in
     case phase of
         Idle index ->
