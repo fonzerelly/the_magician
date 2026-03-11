@@ -452,15 +452,23 @@ view model =
                     { src = toPath Back, description = "Kartenstapel" }
                 )
 
-        -- The draw pile box: stacked backs with the flip animation overlaid in front.
+        -- Die Animation läuft als inFront-Overlay über dem Nachziehstapel.
+        -- Problem: drawPileSize gibt für Expanding/Sliding der letzten Karte 0 zurück,
+        -- weil die Karte schon "abgezogen" gilt — aber die Animation läuft noch.
+        -- Daher: Nachziehstapel solange zeigen wie eine Animation aktiv ist (nicht Idle).
+        isAnimating =
+            case model.animPhase of
+                Idle _ -> False
+                _      -> True
+
         drawPileView =
-            if remainingCount > 0 then
+            if remainingCount > 0 || isAnimating then
                 el
                     [ width (px cardMaxWidth)
                     , height (px cardHeight)
                     , centerX
                     , inFront (renderAnimCard model.animPhase model.pilePositions)
-                , htmlAttribute (Html.Attributes.id drawPileId)
+                    , htmlAttribute (Html.Attributes.id drawPileId)
                     ]
                     stackedBack
             else
