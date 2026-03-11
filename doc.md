@@ -3,13 +3,22 @@
 
 ## DealAnimation.elm
 
+### Typen
+
+| Typ | Bedeutung |
+|---|---|
+| `Pile` | `PileLeft \| PileCenter \| PileRight` — einer der drei Zielpfähle |
+| `AnimData` | `{ index, card, dest, progress }` — gemeinsame Felder aller Animationsphasen |
+| `AnimPhase` | `Idle Int \| Shrinking AnimData \| Expanding AnimData \| Sliding AnimData` |
+| `PilePositions` | `{ drawPile, left, center, right }` — Pixelpositionen aller vier Elemente (zur Laufzeit per Browser.Dom geholt) |
+
 ### `dealDestination : Int -> Pile`
-Gibt zurück, auf welchen der drei Stapel die Karte mit dem gegebenen Austeile-Index gelegt wird.
+Gibt zurück, auf welchen der drei Pfähle die Karte mit dem gegebenen Austeile-Index gelegt wird.
 Karten werden reihum verteilt: Index 0 → PileLeft, 1 → PileCenter, 2 → PileRight, 3 → PileLeft, …
 Implementiert mit `modBy 3 index`.
 
 ### `tick : List Card -> AnimPhase -> AnimPhase`
-Rückt die Animation um einen Schritt (1/10 einer Phase) weiter. Die Zustands-Maschine:
+Rückt die Animation um einen Schritt weiter. Die Zustandsmaschine:
 
 ```
 Idle index
@@ -26,35 +35,61 @@ Expanding anim
 
 Sliding anim
   → progress += 0.1 pro Tick
-  → bei progress >= 1.0: Idle (index+1), Karte wird dem Zielpfad gutgeschrieben
+  → bei progress >= 1.0: Idle (index+1)
 ```
 
-### Typen
+### `flipScale : AnimPhase -> Float`
+Gibt den CSS-scaleX-Wert für die Flip-Animation zurück:
+- `Shrinking`: `1.0 - progress` (Karte schrumpft von voll auf Linie)
+- `Expanding`: `progress` (Karte wächst von Linie auf voll)
+- alle anderen Phasen: `1.0`
 
-| Typ | Bedeutung |
-|---|---|
-| `Pile` | `PileLeft \| PileCenter \| PileRight` — einer der drei Zielpfade |
-| `AnimData` | `{ index, card, dest, progress }` — gemeinsame Felder aller Animationsphasen |
-| `AnimPhase` | `Idle Int \| Shrinking AnimData \| Expanding AnimData \| Sliding AnimData` |
+Wird in der View als `transform: scaleX(...)` mit `transform-origin: center` angewendet.
+
+### `drawPileId : String`
+Konstante `"draw-pile"` — HTML-ID des Ziehstapel-Elements. Einzige Quelle der Wahrheit, damit View und Update dieselbe ID verwenden.
+
+### `pileId : Pile -> String`
+Gibt die HTML-ID des jeweiligen Zielpfahl-Elements zurück:
+- `PileLeft` → `"pile-left"`
+- `PileCenter` → `"pile-center"`
+- `PileRight` → `"pile-right"`
+
+### `slideOffset : Pile -> PilePositions -> Float -> { dx : Float, dy : Float }`
+Berechnet den aktuellen CSS-translate-Offset für die Sliding-Animation durch lineare Interpolation:
+- `dx = (ziel.x - ziehstapel.x) * progress`
+- `dy = (ziel.y - ziehstapel.y) * progress`
+
+Bei progress=0 ist der Offset (0,0), bei progress=1.0 liegt die Karte exakt auf dem Zielpfahl.
 
 ---
 
 ## Main.elm – Animationslogik
 
-### `renderAnimCard : AnimPhase -> Element msg`
-Zeigt die Karte, die gerade animiert wird, über dem Kartenstapel:
-- **Shrinking**: `back.svg` wird schmäler (`width = cardMaxWidth * (1 - progress)`)
-- **Expanding**: die echte Karte wird breiter (`width = cardMaxWidth * progress`)
-- **Idle / Sliding**: nichts (die Karte fliegt schon zum Stapel)
+### `fetchPilePositions : Cmd Msg`
+Holt per `Browser.Dom.getElement` die echten Pixelpositionen aller vier Elemente
+(`draw-pile`, `pile-left`, `pile-center`, `pile-right`) und schickt das Ergebnis als
+`GotPilePositions`-Message zurück. Wird ausgelöst wenn `Idle → Shrinking` übergeht,
+damit die Positionen beim Start der Sliding-Phase garantiert verfügbar sind.
 
-### `renderFlyingCard : AnimPhase -> Element msg`
-Zeigt während der Sliding-Phase die Karte in voller Breite. Wird von `highlightFor` ergänzt,
-das den Zielstapel mit einem gelben Leuchten hervorhebt.
+### `renderAnimCard : AnimPhase -> Maybe PilePositions -> Element msg`
+Zeigt die gerade animierte Karte über dem Ziehstapel:
+- **Shrinking**: `back.svg` mit CSS `scaleX(1-progress)`, Mitte fest
+- **Expanding**: echte Karte mit CSS `scaleX(progress)`, Mitte fest
+- **Sliding**: echte Karte mit CSS `translate(dx, dy)` basierend auf `slideOffset`; wenn Positionen noch nicht geladen → keine Transform
+- **Idle**: unsichtbar
+
+### `animProgress : AnimPhase -> Float`
+Hilfsfunktion — gibt den `progress`-Wert der aktuellen Phase zurück (oder 0.0 für Idle).
 
 ### `addToDealt : Pile -> Card -> Model -> Model`
-Hängt eine fertig animierte Karte an den richtigen Zielstapel im Model an.
-Wird im `Tick`-Handler aufgerufen, sobald eine `Sliding`-Phase abgeschlossen ist.
+Hängt eine fertig animierte Karte an den richtigen Zielpfahl im Model an.
+Wird im `Tick`-Handler aufgerufen, sobald eine Sliding-Phase abgeschlossen ist.
 
 ### `drawPileSize : AnimPhase -> Int -> Int`
-Berechnet wie viele Karten noch im Abhebstapel liegen (wird zum Ausblenden des Stapels
-verwendet, wenn alle Karten ausgeteilt sind).
+Berechnet wie viele Karten noch im Ziehstapel liegen. Wird verwendet um den Stapel
+auszublenden wenn alle 21 Karten ausgeteilt sind.
+
+### `renderPile : List Card -> Element msg`
+Zeigt die oberste Karte eines Zielpfahls. Bei leerem Pfahl wird ein unsichtbarer Platzhalter
+gleicher Größe gerendert, damit das Layout stabil bleibt.
