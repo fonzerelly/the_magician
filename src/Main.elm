@@ -14,7 +14,6 @@ import Element.Background
 import Element.Border
 
 import Time
-import Task
 import Maybe
 import MagicTrick exposing (ProperSizedDeck, Game)
 import MagicTrick exposing (createProperSizedDeck)
@@ -23,7 +22,9 @@ import MagicTrick exposing (handOut)
 import MagicTrick exposing (SlicedDeck(..))
 import MagicTrick exposing (unwrapSlicedDeck)
 
-import DealAnimation exposing (Pile(..), AnimPhase(..), AnimData, dealDestination, tick)
+import DealAnimation exposing (Pile(..), AnimPhase(..), AnimData, dealDestination, tick, pileId, drawPileId, PilePositions)
+import Browser.Dom
+import Task
 
 
 type alias Flags = ()
@@ -34,6 +35,7 @@ type Msg
     | ShuffleDeck ShuffledDeck
     | Tick Time.Posix
     | InitialTime Time.Posix
+    | GotPilePositions (Result Browser.Dom.Error PilePositions)
 
 
 ---- MODEL ----
@@ -47,6 +49,7 @@ type alias Model =
     , animPhase : AnimPhase
     , timeDelta : Int
     , startTime : Time.Posix
+    , pilePositions : Maybe PilePositions
     }
 
 
@@ -73,6 +76,7 @@ init _ =
       , animPhase = Idle 0
       , timeDelta = 0
       , startTime = Time.millisToPosix 0
+      , pilePositions = Nothing
       }
     , Cmd.batch
         [ Random.generate ShuffleDeck randomDeck
@@ -124,20 +128,51 @@ update msg model =
                     case model.animPhase of
                         Sliding anim ->
                             if anim.progress + 0.1 >= 1.0 then
-                                addToDealt anim.dest anim.card model
+                                addToDealt anim.dest anim.card { model | pilePositions = Nothing }
                             else
                                 model
                         _ ->
                             model
 
                 newPhase = tick model.drawPile model.animPhase
+
+                -- When Sliding starts, fetch real pixel positions of all pile elements
+                cmd =
+                    case ( model.animPhase, newPhase ) of
+                        ( Expanding _, Sliding _ ) ->
+                            fetchPilePositions
+                        _ ->
+                            Cmd.none
             in
             ( { newModel | animPhase = newPhase, timeDelta = timeDelta }
-            , Cmd.none
+            , cmd
             )
+
+        GotPilePositions (Ok positions) ->
+            ( { model | pilePositions = Just positions }, Cmd.none )
+
+        GotPilePositions (Err _) ->
+            ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
+
+
+fetchPilePositions : Cmd Msg
+fetchPilePositions =
+    Task.map4
+        (\drawEl leftEl centerEl rightEl ->
+            { drawPile = { x = drawEl.element.x,   y = drawEl.element.y }
+            , left     = { x = leftEl.element.x,   y = leftEl.element.y }
+            , center   = { x = centerEl.element.x, y = centerEl.element.y }
+            , right    = { x = rightEl.element.x,  y = rightEl.element.y }
+            }
+        )
+        (Browser.Dom.getElement drawPileId)
+        (Browser.Dom.getElement (pileId PileLeft))
+        (Browser.Dom.getElement (pileId PileCenter))
+        (Browser.Dom.getElement (pileId PileRight))
+        |> Task.attempt GotPilePositions
 
 
 ---- VIEW ----
@@ -186,35 +221,65 @@ renderCard card =
 
 
 {-| Renders the flip animation over the draw pile.
-The left edge is fixed; the right edge moves (shrink from right, expand to right).
-Height stays constant throughout.
+Uses CSS scaleX with transform-origin center — Mitte bleibt fest, Karte schrumpft/wächst horizontal.
 -}
-renderAnimCard : AnimPhase -> Element msg
-renderAnimCard phase =
+renderAnimCard : AnimPhase -> Maybe PilePositions -> Element msg
+renderAnimCard phase mPositions =
     let
-        flipCard card animWidth =
+        scale = DealAnimation.flipScale phase
+
+        flipCard card =
             el
                 [ width (px cardMaxWidth)
                 , height (px cardHeight)
-                , alignLeft
+                , Html.Attributes.style "transform" ("scaleX(" ++ String.fromFloat scale ++ ")") |> htmlAttribute
+                , Html.Attributes.style "transform-origin" "center" |> htmlAttribute
                 ]
             <|
-                image
-                    [ width (px (max 1 animWidth))
-                    , height (px cardHeight)
-                    , alignLeft
-                    ]
+                image [ width fill, height fill ]
                     { src = toPath card, description = cardName card }
+
+        slideCard card dest =
+            case mPositions of
+                Nothing ->
+                    image [ width (px cardMaxWidth), height (px cardHeight) ]
+                        { src = toPath card, description = cardName card }
+                Just positions ->
+                    let
+                        offset = DealAnimation.slideOffset dest positions (animProgress phase)
+                    in
+                    el
+                        [ width (px cardMaxWidth)
+                        , height (px cardHeight)
+                        , Html.Attributes.style "transform"
+                            ("translate(" ++ String.fromFloat offset.dx ++ "px, " ++ String.fromFloat offset.dy ++ "px)")
+                            |> htmlAttribute
+                        ]
+                    <|
+                        image [ width fill, height fill ]
+                            { src = toPath card, description = cardName card }
     in
     case phase of
-        Shrinking anim ->
-            flipCard Back (round (toFloat cardMaxWidth * (1.0 - anim.progress)))
+        Shrinking _ ->
+            flipCard Back
 
         Expanding anim ->
-            flipCard anim.card (round (toFloat cardMaxWidth * anim.progress))
+            flipCard anim.card
+
+        Sliding anim ->
+            slideCard anim.card anim.dest
 
         _ ->
             none
+
+
+animProgress : AnimPhase -> Float
+animProgress phase =
+    case phase of
+        Shrinking anim -> anim.progress
+        Expanding anim -> anim.progress
+        Sliding anim   -> anim.progress
+        Idle _         -> 0.0
 
 
 {-| Renders the top card of a dealt pile (or an empty placeholder). -}
@@ -254,22 +319,39 @@ view model =
 
         remainingCount = drawPileSize model.animPhase cardCount
 
-        -- Static back card of the draw pile; the animated flip sits in front of it.
-        staticBack =
-            if remainingCount > 0 then
-                renderCard Back
-            else
-                el [ width (px cardMaxWidth), height (px cardHeight) ] none
-
-        -- The draw pile box: static back with the flip animation overlaid in front.
-        drawPileView =
+        -- Zwei Back-Karten leicht versetzt — simuliert einen Kartenstapel.
+        stackedBack =
             el
                 [ width (px cardMaxWidth)
                 , height (px cardHeight)
-                , centerX
-                , inFront (renderAnimCard model.animPhase)
+                , inFront
+                    (image
+                        [ width (px cardMaxWidth)
+                        , height (px cardHeight)
+                        , moveRight 3
+                        , moveDown 3
+                        ]
+                        { src = toPath Back, description = "Kartenstapel" }
+                    )
                 ]
-                staticBack
+                (image
+                    [ width (px cardMaxWidth), height (px cardHeight) ]
+                    { src = toPath Back, description = "Kartenstapel" }
+                )
+
+        -- The draw pile box: stacked backs with the flip animation overlaid in front.
+        drawPileView =
+            if remainingCount > 0 then
+                el
+                    [ width (px cardMaxWidth)
+                    , height (px cardHeight)
+                    , centerX
+                    , inFront (renderAnimCard model.animPhase model.pilePositions)
+                , htmlAttribute (Html.Attributes.id drawPileId)
+                    ]
+                    stackedBack
+            else
+                el [ width (px cardMaxWidth), height (px cardHeight) ] none
 
     in
     { title = "The Magician"
@@ -300,17 +382,18 @@ view model =
                     -- three destination piles; draw pile sits above the center pile
                     , row [ height fill, width fill, centerX, spacing 10 ]
                         [ column [ height fill, width fill, centerX ]
-                            [ el [ centerX, centerY ] <| renderPile model.dealtLeft ]
+                            [ el [ centerX, centerY, htmlAttribute (Html.Attributes.id (pileId PileLeft)) ] <| renderPile model.dealtLeft ]
                         , column [ height fill, width fill, centerX ]
                             [ el
                                 [ centerX
                                 , centerY
                                 , above drawPileView
+                                , htmlAttribute (Html.Attributes.id (pileId PileCenter))
                                 ]
                               <| renderPile model.dealtCenter
                             ]
                         , column [ height fill, width fill, centerX ]
-                            [ el [ centerX, centerY ] <| renderPile model.dealtRight ]
+                            [ el [ centerX, centerY, htmlAttribute (Html.Attributes.id (pileId PileRight)) ] <| renderPile model.dealtRight ]
                         ]
                     ]
                 ]

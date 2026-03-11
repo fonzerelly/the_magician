@@ -1,4 +1,4 @@
-module DealAnimation exposing (Pile(..), dealDestination, AnimPhase(..), AnimData, tick)
+module DealAnimation exposing (Pile(..), dealDestination, AnimPhase(..), AnimData, tick, flipScale, slideOffset, pileId, drawPileId, PilePositions)
 
 import Cards exposing (Card(..))
 
@@ -22,6 +22,61 @@ type AnimPhase
     | Shrinking AnimData
     | Expanding AnimData
     | Sliding AnimData
+
+
+type alias Position =
+    { x : Float, y : Float }
+
+
+type alias PilePositions =
+    { drawPile : Position
+    , left     : Position
+    , center   : Position
+    , right    : Position
+    }
+
+
+{-| HTML-ID des Ziehstapel-Elements. -}
+drawPileId : String
+drawPileId = "draw-pile"
+
+
+{-| HTML-ID eines Zielpfahl-Elements. -}
+pileId : Pile -> String
+pileId pile =
+    case pile of
+        PileLeft   -> "pile-left"
+        PileCenter -> "pile-center"
+        PileRight  -> "pile-right"
+
+
+{-| Berechnet den aktuellen CSS-Translate-Offset für die Sliding-Animation.
+Interpoliert linear zwischen Ziehstapel-Position und Zielpfahl-Position.
+-}
+slideOffset : Pile -> PilePositions -> Float -> { dx : Float, dy : Float }
+slideOffset dest positions progress =
+    let
+        to =
+            case dest of
+                PileLeft   -> positions.left
+                PileCenter -> positions.center
+                PileRight  -> positions.right
+        from = positions.drawPile
+    in
+    { dx = (to.x - from.x) * progress
+    , dy = (to.y - from.y) * progress
+    }
+
+
+{-| Returns the CSS scaleX value for the flip animation.
+Shrinking: 1.0 → 0.0, Expanding: 0.0 → 1.0, everything else: 1.0
+-}
+flipScale : AnimPhase -> Float
+flipScale phase =
+    case phase of
+        Shrinking anim -> 1.0 - anim.progress
+        Expanding anim -> anim.progress
+        _              -> 1.0
 
 
 {-| Returns which pile a card at the given deal index belongs to.
