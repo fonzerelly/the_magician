@@ -1,0 +1,22 @@
+{
+    "type": "package",
+    "name": "mdgriffith/elm-markup",
+    "summary": "An Elm-friendly markup language for typed data and content.",
+    "license": "BSD-3-Clause",
+    "version": "3.0.1",
+    "exposed-modules": [
+        "Mark",
+        "Mark.Edit",
+        "Mark.New",
+        "Mark.Error"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/core": "1.0.0 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/parser": "1.1.0 <= v < 2.0.0"
+    },
+    "test-dependencies": {
+        "elm-explorations/test": "1.2.0 <= v < 2.0.0"
+    }
+}

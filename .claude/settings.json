@@ -1,0 +1,16 @@
+{
+  "allowedTools": [
+    "Read",
+    "Bash(ls:*)",
+    "Bash(cat:*)",
+    "Bash(grep:*)",
+    "Bash(find:*)",
+    "Bash(git:*)",
+    "Bash(elm:*)",
+    "Bash(elm-test:*)",
+    "Bash(elm-format:*)",
+    "Bash(npm:*)",
+    "Bash(npx:*)",
+    "Bash(nvm:*)"
+  ]
+}

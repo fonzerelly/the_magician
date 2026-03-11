@@ -13,7 +13,6 @@ import Deck exposing (fullDeck, getCards)
 import CardRepresentation exposing (cardName)
 import Array
 import MagicTrick exposing (createProperSizedDeck, handOut, SlicedDeck(..), Game, ProperSizedDeck, UserSelection(..), representProperSizedDeck, representGame, readMind, mergeGame)
-import Expect exposing (true)
 import Html exposing (a)
 
 -- test config --
