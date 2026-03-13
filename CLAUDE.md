@@ -16,3 +16,5 @@ Wenn Du feststellst, dass Du für Tests, builds oder so mehr freiraum brauchst, 
 ## Oberste Priorität sollte sein, dass du jedweden Code den du generierst möglichst menschen lesbar gestalltest.
 Falls aber die Performance darunter massiv leidet, dann solltest Du einen Kommentar dazu schreiben, warum der Code an der stelle nun leider unlesbar bzw. schwer nachzuvollziehen sein muss. 
 
+## pushen
+git push sollte bitte nur auf meine explizite aufforderung passieren. Denn git push triggert ja eine github action die die app neu deployed. Und das heißt, es gibt immer auch ein Risiko, dass dabei was schief geht. Bzw. möglicherweise möchte ich ein Teilfeature schon mal committen, aber es ist noch nicht vollständig, so das es noch nicht released werden soll. Also git push bitte IMMER explizit abwarten.

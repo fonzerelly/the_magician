@@ -13,6 +13,7 @@ import Element exposing (..)
 import Element.Background
 import Element.Border
 import Element.Events
+import Element.Font
 
 import Time
 import Maybe
@@ -25,13 +26,15 @@ import MagicTrick exposing (unwrapSlicedDeck)
 import DealAnimation exposing (Pile(..), AnimPhase(..), AnimData, dealDestination, tick, pileId, drawPileId, PilePositions)
 import Browser.Dom
 import Task
+import Intro exposing (IntroPhase(..), tickMillis, shimmerOpacity, magnusOpacity, introText, showTapHint)
 
 
 type alias Flags = ()
 
 
 type AppPhase
-    = Dealing
+    = Intro IntroPhase
+    | Dealing
     | WaitingForSelection
     | ShowingResult Card
 
@@ -43,6 +46,7 @@ type Msg
     | InitialTime Time.Posix
     | GotPilePositions (Result Browser.Dom.Error PilePositions)
     | UserPickedPile UserSelection
+    | UserTapped
 
 
 ---- MODEL ----
@@ -83,7 +87,7 @@ init _ =
       , dealtCenter = []
       , dealtRight = []
       , animPhase = Idle 0
-      , appPhase = Dealing
+      , appPhase = Intro (Shimmer 0.0)
       , round = 1
       , timeDelta = 0
       , startTime = Time.millisToPosix 0
@@ -114,6 +118,13 @@ update msg model =
                 drawnCards = take 21 newDeck |> getCards
                 properSizedDeck = createProperSizedDeck drawnCards
                 theGame = Result.map handOut properSizedDeck
+
+                -- Beim initialen Laden (Intro läuft noch) die Phase nicht überschreiben.
+                -- Beim Neustart nach ShowingResult direkt in Dealing.
+                newAppPhase =
+                    case model.appPhase of
+                        Intro _ -> model.appPhase
+                        _       -> Dealing
             in
             ( { model
                 | game = theGame
@@ -122,7 +133,7 @@ update msg model =
                 , dealtCenter = []
                 , dealtRight = []
                 , animPhase = Idle 0
-                , appPhase = Dealing
+                , appPhase = newAppPhase
                 , round = 1
               }
             , Cmd.none
@@ -132,51 +143,62 @@ update msg model =
             ( { model | startTime = newTime }, Cmd.none )
 
         Tick newTime ->
-            let
-                timeDelta =
-                    Time.posixToMillis newTime - Time.posixToMillis model.startTime
+            case model.appPhase of
+                Intro introPhase ->
+                    let
+                        newIntroPhase = tickMillis 50 introPhase
+                        newAppPhase =
+                            if newIntroPhase == Done then Dealing
+                            else Intro newIntroPhase
+                    in
+                    ( { model | appPhase = newAppPhase }, Cmd.none )
 
-                newPhase = tick model.drawPile model.animPhase
+                _ ->
+                    let
+                        timeDelta =
+                            Time.posixToMillis newTime - Time.posixToMillis model.startTime
 
-                -- Wenn die Sliding-Phase abgeschlossen ist (Übergang Sliding → Idle),
-                -- wird die Karte fest zum Zielpfahl hinzugefügt.
-                -- Wir prüfen den Phasenwechsel statt progress + 0.1, damit diese
-                -- Logik unabhängig von der konkreten Schrittgröße in DealAnimation bleibt.
-                newModel =
-                    case ( model.animPhase, newPhase ) of
-                        ( Sliding anim, Idle _ ) ->
-                            addToDealt anim.dest anim.card { model | pilePositions = Nothing }
-                        _ ->
-                            model
+                        newPhase = tick model.drawPile model.animPhase
 
-                newAppPhase =
-                    case model.appPhase of
-                        ShowingResult _ ->
-                            model.appPhase
-                        _ ->
-                            if DealAnimation.isDealingDone newPhase (List.length model.drawPile) then
-                                WaitingForSelection
-                            else
-                                Dealing
+                        -- Wenn die Sliding-Phase abgeschlossen ist (Übergang Sliding → Idle),
+                        -- wird die Karte fest zum Zielpfahl hinzugefügt.
+                        -- Wir prüfen den Phasenwechsel statt progress + 0.1, damit diese
+                        -- Logik unabhängig von der konkreten Schrittgröße in DealAnimation bleibt.
+                        newModel =
+                            case ( model.animPhase, newPhase ) of
+                                ( Sliding anim, Idle _ ) ->
+                                    addToDealt anim.dest anim.card { model | pilePositions = Nothing }
+                                _ ->
+                                    model
 
-                -- Problem: Browser.Dom.getElement ist asynchron. Das Ergebnis kommt erst im
-                -- *nächsten* Update-Zyklus an (via GotPilePositions). Wenn man die Positionen
-                -- erst beim Start der Sliding-Phase anfordert, sind sie beim ersten Sliding-Tick
-                -- noch nicht da → die Karte springt von (0,0) los statt vom richtigen Startpunkt.
-                --
-                -- Lösung: Positionen eine Phase früher anfordern — beim Übergang Idle→Shrinking.
-                -- Die Shrinking- und Expanding-Phasen dauern je mehrere Ticks (100 ms-Intervall),
-                -- sodass GotPilePositions garantiert eintrifft, bevor Sliding beginnt.
-                cmd =
-                    case ( model.animPhase, newPhase ) of
-                        ( Idle _, Shrinking _ ) ->
-                            fetchPilePositions
-                        _ ->
-                            Cmd.none
-            in
-            ( { newModel | animPhase = newPhase, appPhase = newAppPhase, timeDelta = timeDelta }
-            , cmd
-            )
+                        newAppPhase =
+                            case model.appPhase of
+                                ShowingResult _ ->
+                                    model.appPhase
+                                _ ->
+                                    if DealAnimation.isDealingDone newPhase (List.length model.drawPile) then
+                                        WaitingForSelection
+                                    else
+                                        Dealing
+
+                        -- Problem: Browser.Dom.getElement ist asynchron. Das Ergebnis kommt erst im
+                        -- *nächsten* Update-Zyklus an (via GotPilePositions). Wenn man die Positionen
+                        -- erst beim Start der Sliding-Phase anfordert, sind sie beim ersten Sliding-Tick
+                        -- noch nicht da → die Karte springt von (0,0) los statt vom richtigen Startpunkt.
+                        --
+                        -- Lösung: Positionen eine Phase früher anfordern — beim Übergang Idle→Shrinking.
+                        -- Die Shrinking- und Expanding-Phasen dauern je mehrere Ticks (100 ms-Intervall),
+                        -- sodass GotPilePositions garantiert eintrifft, bevor Sliding beginnt.
+                        cmd =
+                            case ( model.animPhase, newPhase ) of
+                                ( Idle _, Shrinking _ ) ->
+                                    fetchPilePositions
+                                _ ->
+                                    Cmd.none
+                    in
+                    ( { newModel | animPhase = newPhase, appPhase = newAppPhase, timeDelta = timeDelta }
+                    , cmd
+                    )
 
         GotPilePositions (Ok positions) ->
             ( { model | pilePositions = Just positions }, Cmd.none )
@@ -227,6 +249,13 @@ update msg model =
                                         ( { model | appPhase = ShowingResult card }
                                         , Cmd.none
                                         )
+
+        UserTapped ->
+            case model.appPhase of
+                Intro WaitForClick ->
+                    ( { model | appPhase = Intro (Summoning 0.0) }, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -407,6 +436,9 @@ pileAttrs pile appPhase =
         ShowingResult _ ->
             baseAttrs
 
+        Intro _ ->
+            baseAttrs
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -416,6 +448,9 @@ view model =
 
         order =
             case model.appPhase of
+                Intro introPhase ->
+                    introText introPhase
+
                 WaitingForSelection ->
                     "Klicke auf den Stapel, in dem die Karte ist, die du dir gemerkt hast!"
 
@@ -477,7 +512,17 @@ view model =
     in
     { title = "The Magician"
     , body =
-        [ layout [ curtainTexture ] <|
+        [ layout
+            (curtainTexture
+                :: (case model.appPhase of
+                        Intro WaitForClick ->
+                            [ Element.Events.onClick UserTapped
+                            , htmlAttribute (Html.Attributes.style "cursor" "pointer")
+                            ]
+                        _ ->
+                            []
+                   )
+            ) <|
             column [ height fill, width fill ]
                 [ -- instruction text
                   el [ padding 20, width fill ] <|
@@ -502,18 +547,74 @@ view model =
                               )
                           ]
                       <|
-                          text order
+                          column [ spacing 8, width fill ]
+                              [ text order
+                              , if showTapHint (case model.appPhase of
+                                                    Intro p -> p
+                                                    _       -> Done)
+                                then
+                                    el [ centerX, Element.Font.italic, Element.Font.size 14 ]
+                                        (text "Tippen Sie um fortzufahren")
+                                else
+                                    none
+                              ]
 
                 -- main stage
                 , row [ height fill, width fill ]
                     [ -- magician image
                       column [ height fill, width fill ]
                           [ el [ width fill, height fill ] <|
-                              image [ alignBottom, width (fill |> maximum 500) ]
-                                  { src = "src/magnus-states/magnus-summoning.png", description = "The Magician" }
+                              -- Shimmer-Layer (blaues Leuchten) und Magnus-Bild übereinander
+                              el
+                                  [ width (fill |> maximum 500)
+                                  , alignBottom
+                                  , inFront
+                                      (case model.appPhase of
+                                          Intro introPhase ->
+                                              el
+                                                  [ width fill
+                                                  , height fill
+                                                  , htmlAttribute (Html.Attributes.style "opacity"
+                                                      (String.fromFloat (shimmerOpacity introPhase)))
+                                                  , htmlAttribute (Html.Attributes.style "filter"
+                                                      ( "brightness(0)"
+                                                      ++ " drop-shadow(0 0 12px #0080ff)"
+                                                      ++ " drop-shadow(0 0 25px #0060ff)"
+                                                      ++ " drop-shadow(0 0 50px #0040ff)"
+                                                      ))
+                                                  ]
+                                              <|
+                                                  image [ width fill, alignBottom ]
+                                                      { src = "src/magnus-states/magus_init.png"
+                                                      , description = ""
+                                                      }
+                                          _ ->
+                                              none
+                                      )
+                                  ]
+                              <|
+                                  image
+                                      [ alignBottom
+                                      , width fill
+                                      , htmlAttribute (Html.Attributes.style "opacity"
+                                          (case model.appPhase of
+                                              Intro introPhase -> String.fromFloat (magnusOpacity introPhase)
+                                              _                -> "1"
+                                          ))
+                                      ]
+                                      { src =
+                                          case model.appPhase of
+                                              Intro (Summoning _) -> "src/magnus-states/magnus-summoning.png"
+                                              Intro _             -> "src/magnus-states/magus_init.png"
+                                              _                   -> "src/magnus-states/magnus-summoning.png"
+                                      , description = "The Magician"
+                                      }
                           ]
 
                     , case model.appPhase of
+                        Intro _ ->
+                            none
+
                         ShowingResult card ->
                             -- Karte mindestens doppelt so groß (2.5x) zentriert auf der rechten Seite
                             el [ height fill, width fill, centerX ] <|
@@ -546,6 +647,7 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.appPhase of
+        Intro _ -> Time.every 50 Tick
         Dealing -> Time.every 30 Tick
         _       -> Sub.none
 
