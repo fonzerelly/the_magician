@@ -64,6 +64,26 @@ Bei progress=0 ist der Offset (0,0), bei progress=1.0 liegt die Karte exakt auf 
 
 ---
 
+## CardRepresentation.elm
+
+### `faceLabel : Face -> String`
+Gibt die deutsche Bezeichnung eines Kartenwerts zurück.
+Beispiele: `Ace → "Ass"`, `King → "König"`, `Queen → "Dame"`, `Jack → "Bube"`, `Ten → "10"`, usw.
+
+### `suitLabel : Suit -> String`
+Gibt die deutsche Bezeichnung einer Kartenfarbe zurück.
+`Spades → "Pik"`, `Clubs → "Kreuz"`, `Hearts → "Herz"`, `Diamonds → "Karo"`.
+
+### `cardLabel : Card -> String`
+Kombiniert `suitLabel` und `faceLabel` zu einer lesbaren deutschen Kartenbeschreibung.
+Beispiel: `Card Hearts Seven → "Herz 7"`, `Card Spades Queen → "Pik Dame"`.
+Bei `Back`-Karte: `"Rückseite"`.
+
+Wird in `Main.elm` verwendet um die aufgedeckte Karte am Ende des Tricks anzusagen:
+`"Deine Karte war die Herz 7!"` statt des internen Kürzels `"H7"`.
+
+---
+
 ## Main.elm – Animationslogik
 
 ### `fetchPilePositions : Cmd Msg`
