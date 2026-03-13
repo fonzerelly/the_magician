@@ -79,10 +79,10 @@ magnusOpacity phase =
 introText : IntroPhase -> String
 introText phase =
     case phase of
-        Shimmer _    -> "Sind Sie bereit für eine Erfahrung der dritten Art?"
-        FadeIn _     -> "Lassen Sie mich in Ihren Geist vordringen..."
-        WaitForClick -> "Lassen Sie mich in Ihren Geist vordringen..."
-        Summoning _  -> "Merken Sie sich eine der Karten, die ich Ihnen zeigen werde"
+        Shimmer _    -> "Sont Sie bereit für eine Érfahrung der dritten Art? Oui?"
+        FadeIn _     -> "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
+        WaitForClick -> "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
+        Summoning _  -> "Merken Sie sisch eine Karte, die isch Ihnen zeigen verde! Oui?"
         Done        -> ""
 
 

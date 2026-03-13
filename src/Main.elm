@@ -74,8 +74,8 @@ type alias Order =
 
 orders : List Order
 orders =
-    [ Order 1000 "Sind Sie bereit für eine Erfahrung der dritten Art?"
-    , Order 4000 "Merken Sie sich eine Karte"
+    [ Order 1000 "Oui, oui... isch sehe alles, mon ami!"
+    , Order 4000 "Merken Sie sisch eine Karte, s'il vous plaît!"
     ]
 
 
@@ -452,10 +452,10 @@ view model =
                     introText introPhase
 
                 WaitingForSelection ->
-                    "Klicke auf den Stapel, in dem die Karte ist, die du dir gemerkt hast!"
+                    "Velchen Stapel? Montrez-moi! S'il vous plaît!"
 
                 ShowingResult card ->
-                    "Deine Karte war die " ++ cardLabel card ++ "!"
+                    "Magnifique! Ihre Karte var die " ++ cardLabel card ++ "! C'est incroyable, non?"
 
                 Dealing ->
                     orders
@@ -554,7 +554,7 @@ view model =
                                                     _       -> Done)
                                 then
                                     el [ centerX, Element.Font.italic, Element.Font.size 14 ]
-                                        (text "Tippen Sie um fortzufahren")
+                                        (text "Tippen Sie, s'il vous plaît")
                                 else
                                     none
                               ]

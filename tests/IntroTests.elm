@@ -144,22 +144,22 @@ all =
             [ test "Shimmer shows opening question" <|
                 \_ ->
                     introText (Shimmer 0.5)
-                        |> Expect.equal "Sind Sie bereit für eine Erfahrung der dritten Art?"
+                        |> Expect.equal "Sont Sie bereit für eine Érfahrung der dritten Art? Oui?"
 
             , test "FadeIn shows mind-reading text" <|
                 \_ ->
                     introText (FadeIn 0.5)
-                        |> Expect.equal "Lassen Sie mich in Ihren Geist vordringen..."
+                        |> Expect.equal "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
 
             , test "WaitForClick shows mind-reading text" <|
                 \_ ->
                     introText WaitForClick
-                        |> Expect.equal "Lassen Sie mich in Ihren Geist vordringen..."
+                        |> Expect.equal "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
 
             , test "Summoning shows card instruction" <|
                 \_ ->
                     introText (Summoning 0.5)
-                        |> Expect.equal "Merken Sie sich eine der Karten, die ich Ihnen zeigen werde"
+                        |> Expect.equal "Merken Sie sisch eine Karte, die isch Ihnen zeigen verde! Oui?"
             ]
 
         , describe "showTapHint"
