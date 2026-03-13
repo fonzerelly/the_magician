@@ -10,7 +10,7 @@ ELM_HOME=$(pwd)/elm-home ./bin/elm make src/Main.elm --output=dist/Elm.js
 
 mkdir -p dist/src
 cp -r src/card-deck dist/src/card-deck
-cp src/Background.png dist/src/Background.png
+cp -r src/magnus-states dist/src/magnus-states
 
 cat > dist/index.html <<'EOF'
 <!DOCTYPE html>
