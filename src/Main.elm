@@ -5,7 +5,7 @@ import Html exposing (Html)
 import Html.Attributes
 
 import Cards exposing (Face (..), Suit(..), Card(..))
-import CardRepresentation exposing (cardName, CardsMsg, toPath)
+import CardRepresentation exposing (cardName, cardLabel, CardsMsg, toPath)
 import Deck exposing (fullDeck, ShuffledDeck, randomDeck, take, map)
 import Random
 
@@ -420,7 +420,7 @@ view model =
                     "Klicke auf den Stapel, in dem die Karte ist, die du dir gemerkt hast!"
 
                 ShowingResult card ->
-                    "Deine Karte war die " ++ cardName card ++ "!"
+                    "Deine Karte war die " ++ cardLabel card ++ "!"
 
                 Dealing ->
                     orders
@@ -486,7 +486,20 @@ view model =
                           , width (fill |> maximum 900)
                           , Element.Background.color white
                           , Element.Border.rounded 15
-                          , padding 10
+                          , padding 20
+                          , Element.below
+                              (el [ alignLeft, moveRight 60 ] <|
+                                  html
+                                      (Html.div
+                                          [ Html.Attributes.style "width" "0"
+                                          , Html.Attributes.style "height" "0"
+                                          , Html.Attributes.style "border-left" "20px solid transparent"
+                                          , Html.Attributes.style "border-right" "20px solid transparent"
+                                          , Html.Attributes.style "border-top" "25px solid white"
+                                          ]
+                                          []
+                                      )
+                              )
                           ]
                       <|
                           text order

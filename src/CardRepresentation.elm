@@ -1,4 +1,4 @@
-module CardRepresentation exposing (faceName, suitName, cardName, CardsMsg, toHtml, toPath)
+module CardRepresentation exposing (faceName, suitName, cardName, faceLabel, suitLabel, cardLabel, CardsMsg, toHtml, toPath)
 import Cards exposing (Suit(..), Face (..), Card(..))
 import Html exposing (Html, img)
 import Html.Attributes exposing (src)
@@ -33,6 +33,34 @@ cardName: Card -> String
 cardName card = case card of
     Card s f -> suitName s ++ faceName f
     _ -> "back"
+
+faceLabel : Face -> String
+faceLabel face = case face of
+    Ace   -> "Ass"
+    King  -> "König"
+    Queen -> "Dame"
+    Jack  -> "Bube"
+    Ten   -> "10"
+    Nine  -> "9"
+    Eight -> "8"
+    Seven -> "7"
+    Six   -> "6"
+    Five  -> "5"
+    Four  -> "4"
+    Three -> "3"
+    Two   -> "2"
+
+suitLabel : Suit -> String
+suitLabel suit = case suit of
+    Spades   -> "Pik"
+    Clubs    -> "Kreuz"
+    Hearts   -> "Herz"
+    Diamonds -> "Karo"
+
+cardLabel : Card -> String
+cardLabel card = case card of
+    Card s f -> suitLabel s ++ " " ++ faceLabel f
+    _        -> "Rückseite"
 
 toPath: Card -> String
 toPath card = "src/card-deck/" ++ cardName card ++ ".svg"

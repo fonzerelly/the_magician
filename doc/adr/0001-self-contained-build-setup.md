@@ -26,10 +26,12 @@ Wir haben uns für ein vollständig self-contained Build-Setup entschieden:
 
 Assets (Karten-SVGs, Hintergrundbild) wurden von `public/` nach `src/` verschoben, damit `elm reactor` sie über seinen eingebauten Dateiserver ausliefern kann.
 
+**Nachtrag:** Es stellte sich heraus, dass `elm reactor` Asset-Pfade intern als absolute Pfade behandelt (z.B. `/src/card-deck/SA.svg`). Absolute Pfade funktionieren auf GitHub Pages nicht, weil die App dort unter einem Unterpfad deployt wird. Daher wurde `elm reactor` durch `python3 -m http.server` ersetzt, der relative Pfade korrekt auflöst. Siehe ADR 0002.
+
 ## Alternativen die verworfen wurden
 
 - **Node-Version pinnen via `.nvmrc`**: Löst das Problem nicht grundsätzlich — npm-Pakete können trotzdem verschwinden, und jeder Entwickler braucht nvm.
-- **Python-basierter Static Server** (`python3 -m http.server`): Python ist zwar meistens verfügbar, aber eine weitere externe Abhängigkeit. `elm reactor` erfüllt denselben Zweck ohne Extra-Tool.
+- **Python-basierter Static Server** (`python3 -m http.server`): Python ist zwar meistens verfügbar, aber eine weitere externe Abhängigkeit. `elm reactor` erfüllte zunächst denselben Zweck ohne Extra-Tool — wurde aber später ersetzt (siehe ADR 0002).
 - **Nur `elm make` ohne Dev-Server**: Würde Hot-Reload-Komfort wegnehmen ohne echten Vorteil.
 
 ## Konsequenzen

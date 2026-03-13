@@ -92,4 +92,32 @@ all =
                     in
                     toPath card |> Expect.equal "src/card-deck/SA.svg"
             ]
+        , describe "suitLabel"
+            [ test "suitLabel should turn Spades to 'Pik'" <|
+                \_ -> suitLabel Spades |> Expect.equal "Pik"
+            , test "suitLabel should turn Clubs to 'Kreuz'" <|
+                \_ -> suitLabel Clubs |> Expect.equal "Kreuz"
+            , test "suitLabel should turn Hearts to 'Herz'" <|
+                \_ -> suitLabel Hearts |> Expect.equal "Herz"
+            , test "suitLabel should turn Diamonds to 'Karo'" <|
+                \_ -> suitLabel Diamonds |> Expect.equal "Karo"
+            ]
+        , describe "faceLabel"
+            [ test "faceLabel should turn Ace to 'Ass'" <|
+                \_ -> faceLabel Ace |> Expect.equal "Ass"
+            , test "faceLabel should turn King to 'König'" <|
+                \_ -> faceLabel King |> Expect.equal "König"
+            , test "faceLabel should turn Queen to 'Dame'" <|
+                \_ -> faceLabel Queen |> Expect.equal "Dame"
+            , test "faceLabel should turn Jack to 'Bube'" <|
+                \_ -> faceLabel Jack |> Expect.equal "Bube"
+            , test "faceLabel should turn Seven to '7'" <|
+                \_ -> faceLabel Seven |> Expect.equal "7"
+            ]
+        , describe "cardLabel"
+            [ test "cardLabel should turn Hearts Seven to 'Herz 7'" <|
+                \_ -> cardLabel (Card Hearts Seven) |> Expect.equal "Herz 7"
+            , test "cardLabel should turn Spades Queen to 'Pik Dame'" <|
+                \_ -> cardLabel (Card Spades Queen) |> Expect.equal "Pik Dame"
+            ]
         ]
