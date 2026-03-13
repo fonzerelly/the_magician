@@ -497,7 +497,7 @@ view model =
                       column [ height fill, width fill ]
                           [ el [ width fill, height fill ] <|
                               image [ alignBottom, width (fill |> maximum 500) ]
-                                  { src = "/src/Background.png", description = "The Magician" }
+                                  { src = "src/Background.png", description = "The Magician" }
                           ]
 
                     , case model.appPhase of

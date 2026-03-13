@@ -1,2 +1,2 @@
 #!/bin/bash
-ELM_HOME="$(pwd)/elm-home" ./bin/elm reactor
+python3 -m http.server 3000 --directory dist
