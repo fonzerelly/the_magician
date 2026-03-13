@@ -6,7 +6,7 @@ echo "Building..."
 rm -rf dist
 mkdir -p dist
 
-./bin/elm make src/Main.elm --output=dist/Elm.js
+ELM_HOME=$(pwd)/elm-home ./bin/elm make src/Main.elm --output=dist/Elm.js
 
 mkdir -p dist/src
 cp -r src/card-deck dist/src/card-deck
