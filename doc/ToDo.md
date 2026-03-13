@@ -11,6 +11,13 @@ Build-Setup self-contained, 74 Tests grün:
 
 ## Offene Punkte
 
+### [OFFEN] "War das Ihre Karte?" – User-Intention erkennen
+Nach der Kartenaufdeckung soll der User Ja/Nein antworten können. Bei "Nein" gibt
+es zwei Fälle: echter Fehler beim Stapelklicken vs. absichtliches Testen/Trollen.
+Analyse und Lösungsansätze in `doc/adr/0002-user-intention-detection-after-wrong-card.md`.
+Vor Implementierung nochmal gemeinsam besprechen ob der gewählte Ansatz hieb- und
+stichfest ist.
+
 ### [OFFEN] Sprechblase besser designen und neuen Text einfügen
 Die Instruktions-Sprechblase am oberen Rand braucht ein besseres visuelles Design
 und neue/überarbeitete Texte für die einzelnen Phasen des Tricks.
