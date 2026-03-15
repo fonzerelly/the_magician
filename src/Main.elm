@@ -18,7 +18,7 @@ import Element.Font
 import Time
 import Maybe
 import MagicTrick exposing (ProperSizedDeck, Game, UserSelection(..))
-import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, readMind, unwrapProperSizedDeck, errorCandidates)
+import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, readMind, unwrapProperSizedDeck, errorCandidates, suitMatchRatio)
 import Deck exposing (getCards)
 import MagicTrick exposing (SlicedDeck(..))
 import MagicTrick exposing (unwrapSlicedDeck)
@@ -261,9 +261,17 @@ update msg model =
                                             UserTookCenter -> "Center"
                                             UserTookRight  -> "Right"
 
+                                    suitRatios =
+                                        [ ( "Spades",   suitMatchRatio Spades   candidates )
+                                        , ( "Hearts",   suitMatchRatio Hearts   candidates )
+                                        , ( "Diamonds", suitMatchRatio Diamonds candidates )
+                                        , ( "Clubs",    suitMatchRatio Clubs    candidates )
+                                        ]
+
                                     _ = Debug.log "[ADR-0002] userSelections" (List.map selectionLabel allSelections)
                                     _ = Debug.log "[ADR-0002] initialDeck" (model.initialDeck |> Maybe.map MagicTrick.representProperSizedDeck |> Maybe.withDefault [])
                                     _ = Debug.log "[ADR-0002] errorCandidates" (List.map cardName candidates)
+                                    _ = Debug.log "[ADR-0002] suitMatchRatio" suitRatios
                                 in
                                 case identifiedCard of
                                     Nothing ->
