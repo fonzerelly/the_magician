@@ -289,6 +289,8 @@ update msg model =
             case model.appPhase of
                 Intro WaitForClick ->
                     ( { model | appPhase = Intro (Summoning 0.0) }, Cmd.none )
+                ShowingResult _ ->
+                    ( model, Random.generate ShuffleDeck randomDeck )
                 _ ->
                     ( model, Cmd.none )
 
@@ -652,14 +654,25 @@ view model =
 
                         ShowingResult card ->
                             -- Karte mindestens doppelt so groß (2.5x) zentriert auf der rechten Seite
-                            el [ height fill, width fill, centerX ] <|
-                                image
-                                    [ centerX
-                                    , centerY
-                                    , width  (px (cardMaxWidth * 5 // 2))
-                                    , height (px (cardHeight  * 5 // 2))
+                            -- Klick startet neues Spiel
+                            el
+                                [ height fill
+                                , width fill
+                                , centerX
+                                , Element.Events.onClick UserTapped
+                                , htmlAttribute (Html.Attributes.style "cursor" "pointer")
+                                ]
+                            <|
+                                column [ centerX, centerY, spacing 16 ]
+                                    [ image
+                                        [ centerX
+                                        , width  (px (cardMaxWidth * 5 // 2))
+                                        , height (px (cardHeight  * 5 // 2))
+                                        ]
+                                        { src = toPath card, description = cardName card }
+                                    , el [ centerX, Element.Font.italic, Element.Font.size 14, Element.Font.color white ]
+                                        (text "Tippen für neues Spiel")
                                     ]
-                                    { src = toPath card, description = cardName card }
 
                         _ ->
                             -- three destination piles; draw pile sits above the center pile
