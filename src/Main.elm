@@ -18,7 +18,7 @@ import Element.Font
 import Time
 import Maybe
 import MagicTrick exposing (ProperSizedDeck, Game, UserSelection(..))
-import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, readMind, unwrapProperSizedDeck)
+import MagicTrick exposing (createProperSizedDeck, handOut, mergeGame, readMind, unwrapProperSizedDeck, errorCandidates)
 import Deck exposing (getCards)
 import MagicTrick exposing (SlicedDeck(..))
 import MagicTrick exposing (unwrapSlicedDeck)
@@ -63,6 +63,8 @@ type alias Model =
     , timeDelta : Int
     , startTime : Time.Posix
     , pilePositions : Maybe PilePositions
+    , initialDeck : Maybe ProperSizedDeck   -- Deck vor Runde 1, für errorCandidates
+    , userSelections : List UserSelection   -- Stapelwahlen aller Runden
     }
 
 
@@ -92,6 +94,8 @@ init _ =
       , timeDelta = 0
       , startTime = Time.millisToPosix 0
       , pilePositions = Nothing
+      , initialDeck = Nothing
+      , userSelections = []
       }
     , Cmd.batch
         [ Random.generate ShuffleDeck randomDeck
@@ -135,6 +139,8 @@ update msg model =
                 , animPhase = Idle 0
                 , appPhase = newAppPhase
                 , round = 1
+                , initialDeck = properSizedDeck |> Result.toMaybe
+                , userSelections = []
               }
             , Cmd.none
             )
@@ -233,20 +239,41 @@ update msg model =
                                     , appPhase      = Dealing
                                     , round         = model.round + 1
                                     , pilePositions = Nothing
+                                    , userSelections = model.userSelections ++ [ selection ]
                                   }
                                 , Cmd.none
                                 )
                             else
-                                -- Runde 3 abgeschlossen: Karte aufdecken
+                                -- Runde 3 abgeschlossen: Karte aufdecken und Fehlerkandidaten loggen
                                 let
+                                    allSelections = model.userSelections ++ [ selection ]
+
                                     identifiedCard = readMind mergedDeck
+
+                                    candidates =
+                                        model.initialDeck
+                                            |> Maybe.map (errorCandidates allSelections)
+                                            |> Maybe.withDefault []
+
+                                    selectionLabel sel =
+                                        case sel of
+                                            UserTookLeft   -> "Left"
+                                            UserTookCenter -> "Center"
+                                            UserTookRight  -> "Right"
+
+                                    _ = Debug.log "[ADR-0002] userSelections" (List.map selectionLabel allSelections)
+                                    _ = Debug.log "[ADR-0002] initialDeck" (model.initialDeck |> Maybe.map MagicTrick.representProperSizedDeck |> Maybe.withDefault [])
+                                    _ = Debug.log "[ADR-0002] errorCandidates" (List.map cardName candidates)
                                 in
                                 case identifiedCard of
                                     Nothing ->
                                         ( model, Cmd.none )
 
                                     Just card ->
-                                        ( { model | appPhase = ShowingResult card }
+                                        ( { model
+                                            | appPhase = ShowingResult card
+                                            , userSelections = allSelections
+                                          }
                                         , Cmd.none
                                         )
 

@@ -130,6 +130,48 @@ schrumpft aber mit dem Deck:
 Bei 21 Karten ist 30% Abdeckung noch ein brauchbares Signal. Bei kleinen Decks
 wird der Ansatz fast wertlos. **Noch nicht abschließend bewertet.**
 
+### Korrigierte Grundannahme: Echter Fehler erzeugt oft mehr als 1 Pfad-Abweichung
+
+**Entdeckt durch Laufzeit-Tests (2026-03-15).**
+
+Ursprüngliche Annahme war: *"Wenn der User in genau einer Runde den falschen Stapel wählt,
+erscheint seine echte Karte als Fehlerkandidat."*
+
+**Das stimmt nicht.**
+
+Konkretes Gegenbeispiel aus einem echten Testlauf (21 Karten):
+
+- User verfolgt ♣A
+- R1: ♣A in Left → User klickt **Left** ✓
+- R2: ♣A in Left → User klickt **Center** (bewusster Fehler)
+- R3: ♣A liegt nach dem Fehler-Merge nun in Left → User klickt **Left** ✓
+- Algorithmus findet S10. errorCandidates: [C6, S9, S4, C5, D10, D7] — **♣A nicht enthalten.**
+
+**Warum fehlt ♣A?** Der Fehler in R2 verändert die Deck-Anordnung für R3. Der User
+sieht ♣A dann in der *neuen (fehlerhaften)* Anordnung und wählt korrekt nach ihr. Der
+ideale Pfad (ohne Fehler) hätte ♣A in R3 in einen *anderen* Stapel gelegt. Der tatsächliche
+Pfad `[Left, Center, Left]` und der ideale Pfad `[Left, Left, Center]` weichen an
+**zwei Stellen** ab — obwohl der User nur *einen* bewussten Fehler gemacht hat.
+
+Die 6 Fehlerkandidaten prüfen: *"Was passiert wenn genau eine der 3 tatsächlichen
+Wahlen geändert wird?"* — das ist **nicht äquivalent** zu *"Was hätte der korrekte
+Pfad ergeben?"*
+
+**Revidierte Signalinterpretation:**
+
+| Situation | Bisherige Deutung | Korrigierte Deutung |
+|---|---|---|
+| Genannte Karte ist Kandidat | Echter Fehler (sicher) | Konsistent mit echtem Fehler — positives Signal |
+| Genannte Karte ist kein Kandidat | Troll-Verdacht | **Ambivalent** — echter Fehler mit adaptiertem Tracking ist ebenso möglich |
+
+Das Signal ist **asymmetrisch**: Kandidat ist ein starkes positives Signal für echten Fehler.
+Kein Kandidat ist kein starkes Signal in irgendeine Richtung — es umfasst echte
+Einzel-Fehler, Mehr-Runden-Fehler und Trolling gleichzeitig.
+
+**Konsequenz für die Magier-Reaktion:** Der "Kein Kandidat"-Fall darf nicht mehr
+automatisch als Troll-Verdacht behandelt werden. Das Timing-Signal wird damit zum
+**primären Disambiguator** für diesen Fall — nicht mehr zum sekundären Verstärker.
+
 ## Analysierte UX-Varianten nach einem "Nein"
 
 ### Variante A: Alle 21 Karten zur Auswahl zeigen
@@ -314,11 +356,25 @@ quadrantChart
     Typischer Troll: [0.2, 0.2]
 ```
 
-**Lesehinweis:**
-- Quadrant oben-rechts (Fehlerkandidat ✓ + langsam): Magier reagiert verständnisvoll
-- Quadrant oben-links (Fehlerkandidat ✓ + schnell): Magier reagiert konziliant, aber leicht verwundert
-- Quadrant unten-rechts (kein Kandidat + langsam): Magier reagiert verwirrt, räumt Fehler ein
-- Quadrant unten-links (kein Kandidat + schnell): Magier reagiert empört — "Sie schummeln!"
+**Lesehinweis (revidiert nach Laufzeit-Tests):**
+
+- **Oben-rechts** (Kandidat ✓ + langsam): Stärkste Kombination für echten Fehler.
+  Magier reagiert verständnisvoll: *"Je comprends, mon ami — das kann passieren."*
+
+- **Oben-links** (Kandidat ✓ + schnell): Kandidat positiv, aber Schnelligkeit etwas
+  suspicious. Magier reagiert konziliant mit leichtem Zweifel: *"Hmm... möglich."*
+
+- **Unten-rechts** (kein Kandidat + langsam): **Ambivalent.** Könnte echter Fehler mit
+  adaptiertem Tracking sein (der User hat nach dem ersten Fehler die neue Deck-Anordnung
+  korrekt weiterverfolgt — seine Karte wäre durch eine 2-Positions-Änderung erreichbar,
+  die errorCandidates nicht abdeckt). Könnte aber auch ein aufmerksamer Troll sein.
+  Magier reagiert nachdenklich-rätselhaft, **keine Anklage**:
+  *"Das ist... inexplicable. Ich bin verwirrt, aber ich zweifle nicht an Ihnen."*
+
+- **Unten-links** (kein Kandidat + schnell): Stärkster Troll-Indikator. Schnelles Klicken
+  schließt das "adaptiertes Tracking"-Szenario weitgehend aus — wer seine Karte wirklich
+  verfolgt, klickt nicht in unter 500ms. Magier reagiert empört:
+  *"Vous me mentez! Sie schummeln!"*
 
 Die **Beispielpunkte** zeigen typische Nutzerprofile:
 
@@ -382,12 +438,17 @@ die neutrale Zone liegt auf dieser Linie und ist der Mehrwert gegenüber 4 Quadr
 
 | Feld | Bedingung | Magier-Reaktion |
 |---|---|---|
-| 1 | Fehlerkandidat + Schnell | Skeptisch konziliant: "Ich glaube Ihnen... vielleicht" |
-| 2 | Fehlerkandidat + Neutral | Freundlich hilfsbereit |
+| 1 | Fehlerkandidat + Schnell | Konziliant mit Vorbehalt: "Ich glaube Ihnen... vielleicht" |
+| 2 | Fehlerkandidat + Neutral | Verstaendnisvoll, hilfsbereit |
 | 3 | Fehlerkandidat + Langsam | Sehr verstaendnisvoll, fast entschuldigend |
-| 4 | Kein Kandidat + Schnell | Empoert: "Sie schummeln!" |
-| 5 | Kein Kandidat + Neutral | Leicht gereizt, misstrauisch |
-| 6 | Kein Kandidat + Langsam | Verwirrt, raumt Fehler ein |
+| 4 | Kein Kandidat + Schnell | Empoert: "Vous me mentez!" — staerkster Troll-Indikator |
+| 5 | Kein Kandidat + Neutral | Nachdenklich-raetselhaft, keine Anklage (ambivalent) |
+| 6 | Kein Kandidat + Langsam | Verwirrt-gruebelnd: echtes Fehler-mit-Tracking ebenso moeglich wie Troll |
+
+**Hinweis zu Feldern 4–6:** Die Felder "Kein Kandidat" sind seit der Korrektur der
+Grundannahme alle ambivalenter zu interpretieren. Nur Feld 4 (kein Kandidat + schnell)
+bleibt ein starkes Troll-Signal, weil schnelles Klicken das "adaptiertes Tracking"-Szenario
+ausschließt. Felder 5 und 6 sollten keine klare Anklage erzeugen.
 
 **Benoetigt: 6 Reaktionsbilder des Magiers**
 
@@ -420,6 +481,84 @@ block-beta
 
 ---
 
+### Weiterentwicklung: Kontinuierliche Diskriminierung statt Raster-Buckets
+
+*(Noch nicht umgesetzt — Design-Entscheidung für die Implementierung)*
+
+Das 3×3-Raster ist eine grobe Diskretisierung eines eigentlich **kontinuierlichen
+2D-Raums**. Die beiden Rohsignale haben natürliche kontinuierliche Ausprägungen:
+
+- `suitMatchCount` : Int — 0 bis 6 (wie viele der 6 Kandidaten haben die genannte Farbe)
+- `totalReactionMs` : Int — Summe der 3 Runden-Reaktionszeiten in Millisekunden
+
+Wenn man diese Werte als X- und Y-Achse aufträgt, entsteht ein 2D-Raum mit einem
+natürlichen **diagonalen Farbverlauf**: unten-links (kein Match + schnell) = starker
+Troll-Verdacht, oben-rechts (starker Match + langsam) = hohe Wahrscheinlichkeit für
+echten Fehler.
+
+```
+hoher Match  |         ░░▒▒▓▓██
+             |       ░░▒▒▓▓██
+             |     ░░▒▒▓▓██
+             |   ░░▒▒▓▓██
+             | ░░▒▒▓▓██
+kein Match   |▒▒▓▓██
+             +-------------------
+             schnell          langsam
+```
+
+**Warum Raster-Buckets die falsche Abstraktion sind:**
+Achsenparallele Grenzen (wie im 3×3-Raster) bedeuten: "ab 3 Kandidaten gilt es als
+starker Match, egal wie schnell geklickt wurde." Das stimmt nicht mit der
+Gradient-Intuition überein. Eine diagonale Diskriminierungslinie drückt aus: ein
+schwacher Match bei sehr langsamem Klicken kann genauso überzeugend sein wie ein
+starker Match bei mittlerem Tempo.
+
+**Implementierungsidee: Linearer Score + konfigurierbare Schwellwerte**
+
+Statt Enums früh zu erzeugen, wird ein skalarer Score berechnet:
+
+```
+score = w_suit * suitMatchCount + w_timing * (totalReactionMs / 1000.0)
+```
+
+Zwei Schwellwerte `t1 < t2` teilen den Score-Bereich in 3 Zonen, die auf 3–4
+Reaktionen gemappt werden. Die Gewichte `w_suit`, `w_timing` und die Schwellwerte
+`t1`, `t2` sind **keine Compile-Zeit-Konstanten**, sondern konfigurierbare Parameter.
+
+**Warum Konfigurierbarkeit wichtig ist:**
+Die richtigen Werte für Gewichte und Schwellwerte sind empirisch — sie hängen davon
+ab wie echte User spielen. Das lässt sich nicht im Voraus korrekt schätzen. Eine
+Konfigurationsdatei (z.B. JSON in `public/`) erlaubt es, diese Parameter nach
+Erfahrung nachzujustieren — ohne Neukompilierung und ohne Testdurchläufe.
+Ein Deploy der geänderten JSON-Datei genügt.
+
+Elm-seitig könnten die Parameter über `Flags` beim App-Start eingelesen werden:
+
+```elm
+type alias ReactionConfig =
+    { suitWeight    : Float
+    , timingWeight  : Float
+    , threshold1    : Float   -- Grenze zwischen Reaktion A und B
+    , threshold2    : Float   -- Grenze zwischen Reaktion B und C
+    }
+```
+
+```js
+// index.js
+fetch('/reaction-config.json')
+    .then(r => r.json())
+    .then(config => Elm.Main.init({ flags: config }));
+```
+
+**Konsequenz für die Reaktionsbilder:**
+Statt 9 Felder auf 9 Bilder zu mappen, werden 3–4 Reaktionen definiert die auf einem
+Spektrum von "verständnisvoll" bis "empört" liegen. Die Diskriminierungslinien
+bestimmen dann zur Laufzeit welche Reaktion ausgelöst wird. Das reduziert den
+Bilderbedarf ohne die Nuancierung zu verlieren.
+
+---
+
 ## Entscheidungshilfe: Welches Raster wahlen?
 
 ### Gesamtbedarf an Magier-Bildern
@@ -440,49 +579,69 @@ Gesamtbedarf inklusive Reaktionsbilder:
 | Raster | Reaktionsbilder | Gesamtbilder | Trennscharf generierbar? |
 |---|---|---|---|
 | 4 Quadranten | 4 | ~9–10 | Ja — 4 klare Grundemotionen |
-| **6-Feld (Option A)** | **6** | **~11–12** | **Ja — praktische Obergrenze** |
-| 9-Feld (Option B) | 9 (min. ~7) | ~14–15 | Bedingt — einige Felder zu ahnlich |
+| 6-Feld (Option A) | 6 | ~11–12 | Ja — praktische Obergrenze |
+| **9-Feld (Option B)** | **9 (~7)** | **~14–15** | **Bedingt — aber Felder jetzt besser begruendet** |
 
-**Warum 6 die praktische Grenze ist:** GPT Image kann einen Charakter konsistent
+**Warum 6 die praktische Grenze war:** GPT Image kann einen Charakter konsistent
 halten, aber subtile Abstufungen ("leicht gereizt" vs. "mittel gereizt") werden
 bildlich kaum unterscheidbar. Grundemotionen (Freude, Empörung, Verwirrtheit,
 Skepsis) plus je eine abgestufte Variante davon ergeben 6 Bilder die sich
 voneinander klar abgrenzen. Darüber wird es unzuverlässig.
+
+**Revision (2026-03-15):** Die 9 Felder des 3×3-Rasters haben nach der Korrektur
+der Grundannahme eine klarere semantische Trennung als zuvor angenommen — insbesondere
+die mittlere Zeile (Schwacher Match) hat jetzt eine eigenständige Bedeutung und ist
+kein Randfall mehr. Das verringert das Risiko visuell zu ähnlicher Bilder, weil die
+Situationen emotional weniger nah beieinander liegen.
 
 ### Vergleich der Optionen
 
 | Kriterium | 4 Quadranten | 6-Feld (Option A) | 9-Feld (Option B) |
 |---|---|---|---|
 | UX fur User | exakte Karte nennen | exakte Karte nennen | nur Farbe nennen |
-| Algorithmus-Aufwand | gering | gering (+neutral case) | mittel (Farbverteilung berechnen) |
+| Algorithmus-Aufwand | gering | gering (+neutral case) | mittel (Farbverteilung) |
 | Neue Elm-Typen | keine | keine | `SuitMatchStrength` |
 | Reaktionsbilder | 4 | 6 | 9 (~7) |
 | Gesamtbilder | ~9 | ~11 | ~14 |
-| Signal-Qualitat | gut | gut | variiert je nach Spielverlauf |
+| Robustheit gegen adaptives Tracking | schwach | schwach | **gut** |
 | Charakter-Reichtum | mittel | gut | am reichsten |
+
+**Neu hinzugefügtes Kriterium "Robustheit gegen adaptives Tracking":**
+Variante C (exakte Karte) verliert echte Fehler mit adaptivem Tracking komplett —
+sie fallen in den "Kein Match"-Bucket und werden als ambivalent behandelt.
+Variante D (Farbe) fängt viele dieser Fälle als "Schwacher Match" auf, weil die
+Farbe der echten Karte mit höherer Wahrscheinlichkeit unter den 6 Kandidaten
+vertreten ist als die exakte Karte selbst.
 
 ### Empfehlung
 
-**6-Feld mit Variante C** ist der beste Kompromiss:
+**Revidiert: 9-Feld mit Variante D** ist der bessere Kompromiss wenn Signalqualität
+Vorrang hat:
 
-- Kein algorithmischer Mehraufwand gegenuber 4 Quadranten — der timingScore hat
-  ohnehin 3 natürliche Stufen, es braucht nur einen dritten Pattern-Match-Fall
-- 6 Reaktionsbilder sind mit GPT Image zuverlässig trennscharf generierbar
-- Variante C (exakte Karte nennen) liefert ein definitives Signal das zum Charakter
-  des selbstsicheren Magiers passt — er muss nicht raten, er weiss es
-- Gesamtbedarf ~11–12 Bilder ist in einer kontrollierten Generierungsrunde machbar
+- Variante D ist robuster gegen den strukturellen Fehlklassifizierer den die
+  Korrektur der Grundannahme aufgedeckt hat (adaptives Tracking)
+- Die mittlere Zeile "Schwacher Match" hat jetzt eine klar benennbare Bedeutung
+  statt nur ein Puffer zu sein — das erleichtert die Bild-Generierung
+- Der Mehraufwand (SuitMatchStrength-Typ, Farbverteilungsberechnung) ist gering
+- UX-seitig ist Variante D sogar einfacher (1 Klick auf Farbe statt 2 Klicks)
 
-Das 9-Feld lohnt sich nur wenn man Variante D aus UX-Gruenden bevorzugt (weniger
-Reibung fur den User). Dann aber konsequent, weil nur Variante D das 3-stufige
-Fehlerkandidat-Signal liefert das das 9er-Raster rechtfertigt.
+**6-Feld mit Variante C** bleibt vertretbar wenn man den Charakter des Magiers
+priorisiert ("er weiss es genau, er muss nicht raten") und den Fehlklassifizierer
+bewusst in Kauf nimmt. Der Charakter-Aspekt ist ein echtes Argument — ein Magier
+der nach der *Farbe* fragt wirkt weniger allwissend.
 
 ## Empfehlung (noch offen)
 
-Noch keine endgültige Entscheidung. Engste Kandidaten:
+Noch keine endgültige Entscheidung. Engste Kandidaten nach Revision:
 
-- **6-Feld + Variante C** — bester Kompromiss aus Aufwand, Bildqualitat und Signal
-- **9-Feld + Variante D** — reichstes Charakterspiel, aber mehr Aufwand und
-  Bildgenerierung an der Belastungsgrenze
+- **9-Feld + Variante D** — bessere Signalrobustheit, klarere Bucket-Semantik,
+  einfachere UX; Kosten: ~14 Bilder, SuitMatchStrength-Typ
+- **6-Feld + Variante C** — stärkerer Charakter-Eindruck des Magiers, weniger
+  Bilder; Kosten: struktureller Fehlklassifizierer bei adaptivem Tracking
+
+**Offene Abwägungsfrage:** Ist der Charakter-Verlust ("Magier fragt nur nach Farbe")
+schlimmer als der Fehlklassifizierer ("echter Fehler wird als ambivalent behandelt")?
+Das ist eine UX-Entscheidung, keine algorithmische.
 
 ## Konsequenzen (wenn umgesetzt)
 
