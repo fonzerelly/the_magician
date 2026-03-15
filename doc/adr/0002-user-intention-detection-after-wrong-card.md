@@ -667,6 +667,44 @@ binär und 100% zuverlässig, aber auf den Sonderfall R3-Fehler beschränkt.
 
 ---
 
+## Bewertung Reaktionszeit-Signal (2026-03-15)
+
+Nach der empirischen Validierung von `suitMatchRatio` wurde auch das Timing-Signal
+kritisch bewertet — mit dem Ergebnis, dass es **nicht implementiert wird**.
+
+**Das strukturelle Problem:** Ein Troll spielt korrekt. Er verfolgt seine Karte
+genauso aufmerksam wie ein ehrlicher Spieler — er lügt erst ganz am Ende. Es gibt
+keinen Grund warum er dabei schneller oder langsamer klickt. Timing während des Spiels
+ist bei Troll und ehrlichem Spieler strukturell identisch.
+
+Das einzige Szenario wo Timing hilft: ein **unachtsamer** Spieler der keine Karte
+im Kopf hat und wahllos klickt. Der klickt messbar schneller. Aber das ist kein
+bewusster Troll — das ist jemand der das Spiel nicht verstanden hat. Für diese
+Gruppe braucht es keine spezielle Magier-Reaktion.
+
+Für einen statistisch belastbaren Nachweis wären ~30 Läufe pro Szenario
+(~120 gesamt) nötig — und selbst dann würde das Signal nur "unachtsam vs. aufmerksam"
+messen, nicht "Troll vs. ehrlicher Fehler".
+
+## Bewertung KI-basierte Erkennung (2026-03-15)
+
+Ein LLM-API-Call pro Spiel könnte über **Mustererkennung über mehrere Spiele hinweg**
+mehr leisten als jede Einzelspiel-Heuristik:
+
+- Session-History: wer in 8 von 10 Spielen "Nein" sagt ist strukturell ein Troll
+- Freie Texteingabe statt Button: Ton und Formulierung geben reichere Signale als Timing
+- Klick-Sequenz-Muster über mehrere Spiele
+- Pausen zwischen Spielen
+
+Für eine Kartenspiel-App ist das jedoch **massiv over-engineered**: API-Kosten pro
+Spiel, User-Tracking, Datenschutz-Fragen. Der Aufwand steht in keinem Verhältnis
+zum Unterhaltungswert.
+
+**Entscheidung:** Kein Timing-Signal, kein API-Call. Der Magier reagiert einheitlich
+auf "Nein". Die Energie fließt stattdessen in Animationen und Audio-Charakter.
+
+---
+
 ## Empfehlung (noch offen)
 
 Noch keine endgültige Entscheidung. Engste Kandidaten nach Revision:

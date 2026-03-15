@@ -11,6 +11,22 @@ Build-Setup self-contained, 74 Tests grün:
 
 ## Offene Punkte
 
+### [OFFEN] "War das Ihre Karte?" einbauen
+Nach dem Aufdecken der Karte soll der Magier fragen ob es die richtige Karte war.
+Zwei Antwort-Buttons: Ja / Nein. Führt zu unterschiedlichen Magier-Animationen.
+
+### [OFFEN] Animation: Magier-Ärger bei "Nein"
+Neue Magier-Animation/Bild für den Fall dass der User "Nein" klickt.
+Magier reagiert empört oder theatralisch beleidigt — einheitlich, ohne Troll-Erkennung.
+
+### [OFFEN] Animation: Magier-Freude bei "Ja"
+Neue Magier-Animation/Bild für den Fall dass der User "Ja" klickt.
+Magier reagiert triumphierend oder selbstgefällig.
+
+### [OFFEN] Audio ausbauen
+Bestehende Audio-Aufbereitung erweitern: Soundeffekte oder Musik für die neuen
+Spielphasen (Kartenaufdeckung, Ja/Nein-Reaktion, Neustart).
+
 ### [OFFEN] Sprechblase besser designen und neuen Text einfügen
 Die Instruktions-Sprechblase am oberen Rand braucht ein besseres visuelles Design
 und neue/überarbeitete Texte für die einzelnen Phasen des Tricks.
