@@ -630,6 +630,43 @@ priorisiert ("er weiss es genau, er muss nicht raten") und den Fehlklassifiziere
 bewusst in Kauf nimmt. Der Charakter-Aspekt ist ein echtes Argument — ein Magier
 der nach der *Farbe* fragt wirkt weniger allwissend.
 
+## Empirische Validierung der suitMatchRatio (2026-03-15)
+
+18 Testläufe wurden durchgeführt (5× Troll, 5× Fehler R1, 5× Fehler R2, 3× Fehler R3).
+Pro Lauf wurde die verfolgte Karte protokolliert. Vollständige Rohdaten:
+`doc/data-collection-result.txt`.
+
+### Ergebnis: suitMatchRatio hat keine Trennkraft zwischen Troll und F1/F2
+
+| Szenario | suitMatchRatio (Ø) | Wertebereich | Karte in Candidates |
+|---|---|---|---|
+| Troll (T) | 0.267 | 0.167 – 0.500 | 0 / 5 (0%) |
+| Fehler R1 (F1) | 0.307 | 0.200 – 0.333 | 0 / 5 (0%) |
+| Fehler R2 (F2) | 0.233 | 0.000 – 0.500 | 0 / 5 (0%) |
+| Fehler R3 (F3) | 0.400 | 0.200 – 0.500 | **3 / 3 (100%)** |
+
+Die Wertebereiche von T, F1 und F2 überlappen vollständig. Ein Troll mit Ratio 0.5 ist
+datentechnisch nicht von einem F1-Fehler mit Ratio 0.5 zu unterscheiden. `suitMatchRatio`
+allein ist damit **kein brauchbarer Diskriminator** für die praktisch relevante Frage
+(Troll vs. echter Fehler in R1/R2).
+
+### Ausnahme: F3 liefert ein starkes binäres Signal
+
+Fehler in Runde 3 haben kein adaptives Tracking (nach der letzten Runde gibt es keine
+weitere Anpassung). Die echte Karte erscheint daher **immer** in den Candidates — was
+das theoretische Ergebnis aus den ScenarioAnalysisTests bestätigt. Dieses Signal ist
+binär und 100% zuverlässig, aber auf den Sonderfall R3-Fehler beschränkt.
+
+### Konsequenz für die Implementierung
+
+- `suitMatchRatio` als primärer Entscheidungsknopf: **nicht sinnvoll**
+- `errorCandidates` zurückbauen: **nicht nötig** — die Funktionen sind fertig und
+  der F3-Bonus-Indikator ("Karte in Candidates?") liefert echten Mehrwert
+- **Reaktionszeit bleibt das einzige Signal** das Troll von F1/F2-Fehler trennt
+- Empfohlene Gewichtung im Score-Modell: `w_timing` deutlich höher als `w_suit`
+
+---
+
 ## Empfehlung (noch offen)
 
 Noch keine endgültige Entscheidung. Engste Kandidaten nach Revision:
