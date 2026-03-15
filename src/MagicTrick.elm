@@ -1,7 +1,6 @@
 module MagicTrick exposing ( Game, UserSelection(..), ProperSizedDeck, SlicedDeck(..)
                            , length, downSize, handOut, mergeGame, readMind, createProperSizedDeck
                            , representProperSizedDeck, representGame, unwrapSlicedDeck, unwrapProperSizedDeck
-                           , errorCandidates, suitMatchRatio
                            )
 import Cards exposing (Card(..), Face(..), Suit(..))
 import List
@@ -140,73 +139,3 @@ readMind deck =
     arrayOfCards |> Array.get indexToPick
 
 
--- Berechnet alle alternativen Karten die der Algorithmus gefunden hätte,
--- wenn der User in genau einer Runde einen anderen Stapel gewählt hätte.
--- Gibt deduplizierte Liste zurück (Duplikate sind möglich wenn verschiedene
--- Fehlerwahlen zum selben Ergebnis führen).
-errorCandidates : List UserSelection -> ProperSizedDeck -> List Card
-errorCandidates selections initialDeck =
-    let
-        alternativesFor : UserSelection -> List UserSelection
-        alternativesFor sel =
-            case sel of
-                UserTookLeft   -> [ UserTookCenter, UserTookRight ]
-                UserTookCenter -> [ UserTookLeft,   UserTookRight ]
-                UserTookRight  -> [ UserTookLeft,   UserTookCenter ]
-
-        replaceAt : Int -> a -> List a -> List a
-        replaceAt idx newVal list =
-            List.indexedMap (\i v -> if i == idx then newVal else v) list
-
-        -- Simuliert ein komplettes Spiel mit einer gegebenen Wahlliste
-        simulateGame : List UserSelection -> Maybe Card
-        simulateGame sels =
-            let
-                step : UserSelection -> Maybe ProperSizedDeck -> Maybe ProperSizedDeck
-                step sel maybeDeck =
-                    maybeDeck
-                        |> Maybe.map handOut
-                        |> Maybe.andThen (\game -> mergeGame sel game |> Result.toMaybe)
-            in
-            List.foldl step (Just initialDeck) sels
-                |> Maybe.andThen readMind
-
-        -- Alle 6 Varianten: pro Runde je 2 alternative Wahlen
-        variantSelections : List (List UserSelection)
-        variantSelections =
-            selections
-                |> List.indexedMap (\roundIdx sel ->
-                    alternativesFor sel
-                        |> List.map (\alt -> replaceAt roundIdx alt selections)
-                )
-                |> List.concat
-
-        addIfNew : Card -> List Card -> List Card
-        addIfNew card acc =
-            if List.member card acc then acc else acc ++ [ card ]
-    in
-    variantSelections
-        |> List.filterMap simulateGame
-        |> List.foldl addIfNew []
-
-
--- Anteil der Kandidaten die die genannte Farbe haben (0.0 = kein Match, 1.0 = alle).
--- Eingabe: die Farbe die der User nennt + die Fehlerkandidaten-Liste aus errorCandidates.
-suitMatchRatio : Suit -> List Card -> Float
-suitMatchRatio suit candidates =
-    let
-        total = List.length candidates
-
-        suitOf card = case card of
-            Card s _ -> Just s
-            Back     -> Nothing
-
-        matches =
-            candidates
-                |> List.filter (\card -> suitOf card == Just suit)
-                |> List.length
-    in
-    if total == 0 then
-        0.0
-    else
-        toFloat matches / toFloat total
