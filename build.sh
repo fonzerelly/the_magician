@@ -12,7 +12,9 @@ mkdir -p dist/src
 cp -r src/card-deck dist/src/card-deck
 cp -r src/magnus-states dist/src/magnus-states
 
-cat > dist/index.html <<'EOF'
+PRELOAD_TAGS=$(ls src/magnus-states/ | sed 's|.*|  <link rel="preload" as="image" href="src/magnus-states/&">|')
+
+cat > dist/index.html <<EOF
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -20,6 +22,7 @@ cat > dist/index.html <<'EOF'
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Magician</title>
   <style>body { margin: 0; }</style>
+$PRELOAD_TAGS
 </head>
 <body>
   <script src="Elm.js"></script>

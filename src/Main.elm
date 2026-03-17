@@ -605,7 +605,13 @@ view model =
                                           case model.appPhase of
                                               Intro (Summoning _) -> "src/magnus-states/magnus-summoning.png"
                                               Intro _             -> "src/magnus-states/magus_init.png"
-                                              _                   -> "src/magnus-states/magnus-summoning.png"
+                                              Dealing             -> "src/magnus-states/magnus-summoning.png"
+                                              WaitingForSelection ->
+                                                  case model.round of
+                                                      1 -> "src/magnus-states/magnus_1.png"
+                                                      2 -> "src/magnus-states/magnus_2.png"
+                                                      _ -> "src/magnus-states/magnus_3.png"
+                                              ShowingResult _     -> "src/magnus-states/magnus_presents.png"
                                       , description = "The Magician"
                                       }
                           ]
