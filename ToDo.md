@@ -31,7 +31,7 @@ Spielphasen (Kartenaufdeckung, Ja/Nein-Reaktion, Neustart).
 Die Instruktions-Sprechblase am oberen Rand braucht ein besseres visuelles Design
 und neue/überarbeitete Texte für die einzelnen Phasen des Tricks.
 
-### [OFFEN] Nächste Runde implementieren
+### [ERLEDIGT] Nächste Runde implementieren
 Nach dem Austeilen aller 21 Karten soll der Nutzer eine Runde wählen (welcher Stapel
 enthält seine Karte), danach werden die Stapel neu zusammengelegt und erneut ausgeteilt —
 insgesamt 3 Runden. Danach zeigt der Magier die gemerkete Karte.
