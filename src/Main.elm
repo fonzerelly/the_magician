@@ -25,8 +25,10 @@ import MagicTrick exposing (unwrapSlicedDeck)
 
 import DealAnimation exposing (Pile(..), AnimPhase(..), AnimData, dealDestination, tick, pileId, drawPileId, PilePositions)
 import Browser.Dom
+import Browser.Events
 import Task
 import Intro exposing (IntroPhase(..), tickMillis, shimmerOpacity, magnusOpacity, introText, showTapHint)
+import Responsive exposing (isMobile)
 
 
 type alias Flags = ()
@@ -47,6 +49,7 @@ type Msg
     | GotPilePositions (Result Browser.Dom.Error PilePositions)
     | UserPickedPile UserSelection
     | UserTapped
+    | WindowResized Int Int
 
 
 ---- MODEL ----
@@ -63,6 +66,7 @@ type alias Model =
     , timeDelta : Int
     , startTime : Time.Posix
     , pilePositions : Maybe PilePositions
+    , windowWidth : Int
     }
 
 
@@ -92,10 +96,12 @@ init _ =
       , timeDelta = 0
       , startTime = Time.millisToPosix 0
       , pilePositions = Nothing
+      , windowWidth = 1024
       }
     , Cmd.batch
         [ Random.generate ShuffleDeck randomDeck
         , Task.perform InitialTime Time.now
+        , Task.perform (\vp -> WindowResized (round vp.viewport.width) (round vp.viewport.height)) Browser.Dom.getViewport
         ]
     )
 
@@ -255,6 +261,9 @@ update msg model =
                     ( model, Random.generate ShuffleDeck randomDeck )
                 _ ->
                     ( model, Cmd.none )
+
+        WindowResized w _ ->
+            ( { model | windowWidth = w }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -524,13 +533,13 @@ view model =
             ) <|
             column [ height fill, width fill ]
                 [ -- instruction text
-                  el [ padding 20, width fill ] <|
+                  el [ padding (if isMobile model.windowWidth then 8 else 20), width fill ] <|
                       el
                           [ centerX
                           , width (fill |> maximum 900)
                           , Element.Background.color white
                           , Element.Border.rounded 15
-                          , padding 20
+                          , padding (if isMobile model.windowWidth then 16 else 20)
                           , Element.below
                               (el [ alignLeft, moveRight 60 ] <|
                                   html
@@ -547,7 +556,13 @@ view model =
                           ]
                       <|
                           column [ spacing 8, width fill ]
-                              [ text order
+                              [ paragraph
+                                    (if isMobile model.windowWidth then
+                                        [ Element.Font.size 16 ]
+                                    else
+                                        []
+                                    )
+                                    [ text order ]
                               , if showTapHint (case model.appPhase of
                                                     Intro p -> p
                                                     _       -> Done)
@@ -559,101 +574,117 @@ view model =
                               ]
 
                 -- main stage
-                , row [ height fill, width fill ]
-                    [ -- magician image
-                      column [ height fill, width fill ]
-                          [ el [ width fill, height fill ] <|
-                              -- Shimmer-Layer (blaues Leuchten) und Magnus-Bild übereinander
-                              el
-                                  [ width (fill |> maximum 500)
-                                  , alignBottom
-                                  , inFront
-                                      (case model.appPhase of
-                                          Intro introPhase ->
-                                              el
-                                                  [ width fill
-                                                  , height fill
-                                                  , htmlAttribute (Html.Attributes.style "opacity"
-                                                      (String.fromFloat (shimmerOpacity introPhase)))
-                                                  , htmlAttribute (Html.Attributes.style "filter"
-                                                      ( "brightness(0)"
-                                                      ++ " drop-shadow(0 0 12px #0080ff)"
-                                                      ++ " drop-shadow(0 0 25px #0060ff)"
-                                                      ++ " drop-shadow(0 0 50px #0040ff)"
-                                                      ))
-                                                  ]
-                                              <|
-                                                  image [ width fill, alignBottom ]
-                                                      { src = "src/magnus-states/magus_init.png"
-                                                      , description = ""
-                                                      }
-                                          _ ->
-                                              none
-                                      )
-                                  ]
-                              <|
-                                  image
-                                      [ alignBottom
-                                      , width fill
-                                      , htmlAttribute (Html.Attributes.style "opacity"
-                                          (case model.appPhase of
-                                              Intro introPhase -> String.fromFloat (magnusOpacity introPhase)
-                                              _                -> "1"
-                                          ))
-                                      ]
-                                      { src =
-                                          case model.appPhase of
-                                              Intro (Summoning _) -> "src/magnus-states/magnus-summoning.png"
-                                              Intro WaitForClick  -> "src/magnus-states/magnus-summoning.png"
-                                              Intro _             -> "src/magnus-states/magus_init.png"
-                                              Dealing             -> "src/magnus-states/magnus-summoning.png"
-                                              WaitingForSelection ->
-                                                  case model.round of
-                                                      1 -> "src/magnus-states/magnus_1.png"
-                                                      2 -> "src/magnus-states/magnus_2.png"
-                                                      _ -> "src/magnus-states/magnus_3.png"
-                                              ShowingResult _     -> "src/magnus-states/magnus_presents.png"
-                                      , description = "The Magician"
-                                      }
-                          ]
-
-                    , case model.appPhase of
-                        Intro _ ->
-                            none
-
-                        ShowingResult card ->
-                            -- Karte mindestens doppelt so groß (2.5x) zentriert auf der rechten Seite
-                            -- Klick startet neues Spiel
+                , let
+                    magicianEl sizeAttrs =
+                        el ([ width fill ] ++ sizeAttrs) <|
+                            -- Shimmer-Layer (blaues Leuchten) und Magnus-Bild übereinander
                             el
-                                [ height fill
-                                , width fill
-                                , centerX
-                                , Element.Events.onClick UserTapped
-                                , htmlAttribute (Html.Attributes.style "cursor" "pointer")
+                                [ width (fill |> maximum 500)
+                                , alignBottom
+                                , inFront
+                                    (case model.appPhase of
+                                        Intro introPhase ->
+                                            el
+                                                [ width fill
+                                                , height fill
+                                                , htmlAttribute (Html.Attributes.style "opacity"
+                                                    (String.fromFloat (shimmerOpacity introPhase)))
+                                                , htmlAttribute (Html.Attributes.style "filter"
+                                                    ( "brightness(0)"
+                                                    ++ " drop-shadow(0 0 12px #0080ff)"
+                                                    ++ " drop-shadow(0 0 25px #0060ff)"
+                                                    ++ " drop-shadow(0 0 50px #0040ff)"
+                                                    ))
+                                                ]
+                                            <|
+                                                image [ width fill, alignBottom ]
+                                                    { src = "src/magnus-states/magus_init.png"
+                                                    , description = ""
+                                                    }
+                                        _ ->
+                                            none
+                                    )
                                 ]
                             <|
-                                column [ centerX, centerY, spacing 16 ]
-                                    [ image
-                                        [ centerX
-                                        , width  (px (cardMaxWidth * 5 // 2))
-                                        , height (px (cardHeight  * 5 // 2))
+                                image
+                                    [ alignBottom
+                                    , width fill
+                                    , htmlAttribute (Html.Attributes.style "opacity"
+                                        (case model.appPhase of
+                                            Intro introPhase -> String.fromFloat (magnusOpacity introPhase)
+                                            _                -> "1"
+                                        ))
+                                    ]
+                                    { src =
+                                        case model.appPhase of
+                                            Intro (Summoning _) -> "src/magnus-states/magnus-summoning.png"
+                                            Intro WaitForClick  -> "src/magnus-states/magnus-summoning.png"
+                                            Intro _             -> "src/magnus-states/magus_init.png"
+                                            Dealing             -> "src/magnus-states/magnus-summoning.png"
+                                            WaitingForSelection ->
+                                                case model.round of
+                                                    1 -> "src/magnus-states/magnus_1.png"
+                                                    2 -> "src/magnus-states/magnus_2.png"
+                                                    _ -> "src/magnus-states/magnus_3.png"
+                                            ShowingResult _ -> "src/magnus-states/magnus_presents.png"
+                                    , description = "The Magician"
+                                    }
+
+                    cardsEl =
+                        case model.appPhase of
+                            Intro _ ->
+                                none
+
+                            ShowingResult card ->
+                                -- Karte mindestens doppelt so groß (2.5x) zentriert
+                                -- Klick startet neues Spiel
+                                el
+                                    [ height fill
+                                    , width fill
+                                    , centerX
+                                    , Element.Events.onClick UserTapped
+                                    , htmlAttribute (Html.Attributes.style "cursor" "pointer")
+                                    ]
+                                <|
+                                    column [ centerX, centerY, spacing 16 ]
+                                        [ image
+                                            [ centerX
+                                            , width  (px (cardMaxWidth * 5 // 2))
+                                            , height (px (cardHeight  * 5 // 2))
+                                            ]
+                                            { src = toPath card, description = cardName card }
+                                        , el [ centerX, Element.Font.italic, Element.Font.size 14, Element.Font.color white ]
+                                            (text "Tippen für neues Spiel")
                                         ]
-                                        { src = toPath card, description = cardName card }
-                                    , el [ centerX, Element.Font.italic, Element.Font.size 14, Element.Font.color white ]
-                                        (text "Tippen für neues Spiel")
+
+                            _ ->
+                                -- three destination piles; draw pile sits above the center pile
+                                row [ height fill, width fill, centerX, spacing 10 ]
+                                    [ column [ height fill, width fill, centerX ]
+                                        [ el (pileAttrs PileLeft model.appPhase) <| renderPile model.dealtLeft ]
+                                    , column [ height fill, width fill, centerX ]
+                                        [ el ([ above drawPileView ] ++ pileAttrs PileCenter model.appPhase) <| renderPile model.dealtCenter ]
+                                    , column [ height fill, width fill, centerX ]
+                                        [ el (pileAttrs PileRight model.appPhase) <| renderPile model.dealtRight ]
                                     ]
 
-                        _ ->
-                            -- three destination piles; draw pile sits above the center pile
-                            row [ height fill, width fill, centerX, spacing 10 ]
-                                [ column [ height fill, width fill, centerX ]
-                                    [ el (pileAttrs PileLeft model.appPhase) <| renderPile model.dealtLeft ]
-                                , column [ height fill, width fill, centerX ]
-                                    [ el ([ above drawPileView ] ++ pileAttrs PileCenter model.appPhase) <| renderPile model.dealtCenter ]
-                                , column [ height fill, width fill, centerX ]
-                                    [ el (pileAttrs PileRight model.appPhase) <| renderPile model.dealtRight ]
-                                ]
-                    ]
+                    isIntro =
+                        case model.appPhase of
+                            Intro _ -> True
+                            _       -> False
+                  in
+                  if isMobile model.windowWidth && not isIntro then
+                    -- Auf Mobile: Magier über den Karten, auf ein Drittel verkleinert
+                    column [ height fill, width fill ]
+                        [ magicianEl [ height (px 105) ]
+                        , cardsEl
+                        ]
+                  else
+                    -- Desktop: Magier links, Karten rechts nebeneinander
+                    row [ height fill, width fill ]
+                        [ magicianEl [ height fill ]
+                        , cardsEl
+                        ]
                 ]
         ]
     }
@@ -663,10 +694,14 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.appPhase of
-        Intro _ -> Time.every 50 Tick
-        Dealing -> Time.every 30 Tick
-        _       -> Sub.none
+    let
+        tickSub =
+            case model.appPhase of
+                Intro _ -> Time.every 50 Tick
+                Dealing -> Time.every 30 Tick
+                _       -> Sub.none
+    in
+    Sub.batch [ tickSub, Browser.Events.onResize WindowResized ]
 
 
 main : Program Flags Model Msg
