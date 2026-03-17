@@ -27,6 +27,15 @@ $PRELOAD_TAGS
 <body>
   <script src="Elm.js"></script>
   <script>Elm.Main.init();</script>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X1WTR40ZVW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-X1WTR40ZVW');
+</script>
 </body>
 </html>
 EOF
