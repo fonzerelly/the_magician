@@ -604,6 +604,7 @@ view model =
                                       { src =
                                           case model.appPhase of
                                               Intro (Summoning _) -> "src/magnus-states/magnus-summoning.png"
+                                              Intro WaitForClick  -> "src/magnus-states/magnus-summoning.png"
                                               Intro _             -> "src/magnus-states/magus_init.png"
                                               Dealing             -> "src/magnus-states/magnus-summoning.png"
                                               WaitingForSelection ->
