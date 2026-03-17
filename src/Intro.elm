@@ -81,7 +81,7 @@ introText phase =
     case phase of
         Shimmer _    -> "Sont Sie bereit für eine Érfahrung der dritten Art? Oui?"
         FadeIn _     -> "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
-        WaitForClick -> "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
+        WaitForClick -> "Gleisch seön sie viele Cart. Bitte merken Sie sisch eine und in welschem Stapel sie ist!"
         Summoning _  -> "Merken Sie sisch eine Karte, die isch Ihnen zeigen verde! Oui?"
         Done        -> ""
 

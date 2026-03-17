@@ -151,10 +151,10 @@ all =
                     introText (FadeIn 0.5)
                         |> Expect.equal "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
 
-            , test "WaitForClick shows mind-reading text" <|
+            , test "WaitForClick shows card instruction preview" <|
                 \_ ->
                     introText WaitForClick
-                        |> Expect.equal "Lassen Sie misch in Ihren Geist vordringen... Mon Dieu!"
+                        |> Expect.equal "Gleisch seön sie viele Cart. Bitte merken Sie sisch eine und in welschem Stapel sie ist!"
 
             , test "Summoning shows card instruction" <|
                 \_ ->
